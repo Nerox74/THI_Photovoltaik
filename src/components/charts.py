@@ -1,0 +1,1 @@
+"""Hier werden die Charts erstellt, in welchen die Stromerzeugung der Photovoltaik visuallisert wird"""

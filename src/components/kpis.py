@@ -1,0 +1,1 @@
+"""Hier werden zentrale Zahlen und Fakten in Streamlit dargestellt, die im Dashboard angezeigt werden"""
