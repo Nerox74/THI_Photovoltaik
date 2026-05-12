@@ -5,7 +5,7 @@ Konfiguriert das Root-Logging mit zwei Handlern:
 - Konsole (stdout) für Live-Ausgaben während der Entwicklung
 - Rotierende Logdatei für die persistente Aufzeichnung
 
-Wird einmalig beim Anwendungsstart (z. B. in Entry.py) aufgerufen.
+Wird einmalig beim Anwendungsstart (z. B. in main.py) aufgerufen.
 Andere Module holen sich ihren Logger anschließend über
 logging.getLogger(__name__) und erben automatisch diese Konfiguration.
 """
