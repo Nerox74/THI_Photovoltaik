@@ -1,11 +1,11 @@
-""" Hier wird das Dashboard erzeugt. Es werden alle anderen Python Files hier importiert und verwendet, um
-    das Dashboard über Streamlit zu erzeugen."""
+"""Hier wird das Dashboard erzeugt. Es werden alle anderen Python Files hier importiert und verwendet, um
+das Dashboard über Streamlit zu erzeugen."""
 
-#Imports
+# Imports
 
 import logging
-import pandas as pd
 
+import pandas as pd
 
 
 def streamlit_app():
@@ -19,5 +19,4 @@ def streamlit_app():
     params:
 
     return:
-    :return:
     """
