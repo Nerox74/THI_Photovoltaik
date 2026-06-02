@@ -5,8 +5,6 @@ Hier werden zentrale Zahlen und Fakten in Streamlit dargestellt, die im Dashboar
 2.  Aktuelle Stromherstellung, an diesem einen Tag, pro Monat und wie viel schon im Jahr hergestellt worden ist.
 3.  Balken zu wie viel Prozent sich die Anlage schon abbezahl hat, oder CO2 Ersparnis dadurch
 
-
-
 """
 
 # Imports
