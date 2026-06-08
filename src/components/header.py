@@ -11,14 +11,8 @@ je nach Wetter anders Symbol, plus der Ort in welchem man sich gerade befindet a
 def show_header():
     """
     Erstellt den Header für die Streamlit-App
-
-
-    Args:
-
-    Params:
-
-    Returns:
-
+    Auf diesen wird angezeigt, wo die PV anlage ist und aktuelles Wetter und der aktuelle Tag
+    --> Wetter über API
 
     """
     pass

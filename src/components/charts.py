@@ -13,5 +13,23 @@ Welche ?
 # Imports
 
 
-def show_main_chart():
-    pass
+def show_mainchart():
+
+    """
+
+
+    """
+def create_kalendergrafik():
+
+    """
+
+
+    :return:
+    """
+
+def create_grafik1():
+    """"""
+
+
+def create_grafik2():
+    """"""
