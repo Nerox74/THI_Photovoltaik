@@ -3,9 +3,19 @@ je nach Wetter anders Symbol, plus der Ort in welchem man sich gerade befindet a
 """
 
 # Imports
+#mateo evtl.
 
+#Verbindung mit API
 
-# Api Verbindung -> Schauen welches Wetter aktuell ist
+def get_weather_data():
+    """
+
+    Aktuelle Temperatur herausfinden und Wetter --> sonnig, regen usw
+
+    Returns: Int(Temperatur) und String(Wetter)
+
+    """
+
 
 
 def show_header():
@@ -15,4 +25,4 @@ def show_header():
     --> Wetter über API
 
     """
-    pass
+
