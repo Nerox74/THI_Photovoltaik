@@ -14,22 +14,23 @@ Welche ?
 
 
 def show_mainchart():
-
     """
-
 
     """
 def create_kalendergrafik():
 
     """
-
-
-    :return:
     """
 
 def create_grafik1():
-    """"""
+    """
+
+
+    """
 
 
 def create_grafik2():
-    """"""
+    """
+
+
+    """
