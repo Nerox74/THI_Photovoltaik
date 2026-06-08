@@ -9,20 +9,16 @@ Hier werden zentrale Zahlen und Fakten in Streamlit dargestellt, die im Dashboar
 
 # Imports
 
-#Konstanten
-#Strompreis
-
 
 def tagesumme_erzeugter_strom():
-
     """
     Hier wird der kummulierte erzeugte Strom pro Tag angezeigt. Die Berechnung wird in formulas durchgeführt.
     Dargestellt in einem Rechteck.
 
     """
 
-def ersparnis_durch_pv():
 
+def ersparnis_durch_pv():
     """
     Darstellung des durch die PV-Anlage eingesparten Geld.
     Auswahl in Dropdownmenü, ob man die Ersparnis am Tag, Woche, Monat, oder im bisherigen Jahr sehen möchte. Hierfür muss überprüft werden, ob jeweils für die Zeiteinheiten überhaupt Daten vorhandne sind
@@ -31,8 +27,8 @@ def ersparnis_durch_pv():
 
     """
 
-def auslastung_pv():
 
+def auslastung_pv():
     """
 
     Anzeige der Auslastung der PV-Anlage in einem Kreisdiagram. 100% entspricht was eine PV-Anlage maximal an einem Tag produzieren kann.
@@ -42,9 +38,7 @@ def auslastung_pv():
     """
 
 
-
 def amortisierung_pv():
-
     """
 
     Zeigt einen Balken an. Dieser ist mit grüner Farbe gefüllt jedoch nur Prozentual und in der Mitte von diesen steht eine Prozentzahl. Diese Prozentzahl und die Länge des grünen Balkens im verhältnis zur Gesamtlänge des Rechteckes zeigt an,

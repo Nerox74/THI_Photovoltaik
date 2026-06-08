@@ -2,24 +2,21 @@
 je nach Wetter anders Symbol, plus der Ort in welchem man sich gerade befindet also Ingolstadt, da dort Photovoltaik ist
 """
 
-
 # Imports
-#mateo evtl.
+# mateo evtl.
 
 
-#Verbindung mit API
+# Verbindung mit API
+
 
 def api_connection():
-
     """
     Stellt eine Verbindung zur Wetter-Api her.
 
     """
 
 
-
 def get_weather_data():
-
     """
 
     Aktuelle Temperatur und das aktuelle Wetter über die Wetter-Api herausfinden, in Ingolstadt--> sonnig, regen usw.
@@ -30,7 +27,6 @@ def get_weather_data():
 
 
 def get_date_and_time():
-
     """
 
     Hier wird das akutelle Datum und die aktuelle Uhrzeit herausgefunden.
@@ -42,7 +38,6 @@ def get_date_and_time():
 
 
 def show_header():
-
     """
 
 
@@ -52,4 +47,3 @@ def show_header():
 
 
     """
-

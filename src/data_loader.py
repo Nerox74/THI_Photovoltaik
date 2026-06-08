@@ -1,23 +1,17 @@
-""" Stellt eine Verbindung zu Prometheus her und holt von dort die CSV-Dateien """
+"""Stellt eine Verbindung zu Prometheus her und holt von dort die CSV-Dateien"""
 
 # Imports
-
-import logging
-
-import numpy as np
-import pandas as pd
-from datetime import datetime, timedelta
 
 
 # Überlegen wie live Daten geholt werden können --> ist immer live
 
 
 def prometheus_connection():
-
     """
     Stellt eine Verbindung zum Prometheus Server her, sodass die Daten von diesem abgerufen werden können.
 
     """
+
 
 def data_loader():
     """
@@ -25,14 +19,9 @@ def data_loader():
     """
 
 
-
-
-
-def data_cleaner():    """
+def data_cleaner():
+    """
     Bekommt die Daten vom Data Loader und bringt diese in das Format, mit welchem wir auch schlussendlich Arbeiten wollen.
     Format welches hier ausgegeben werden soll: (KWh, Zeit)
 
     """
-
-
-
