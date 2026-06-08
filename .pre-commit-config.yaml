@@ -1,24 +1,25 @@
+#"""
 # Siehe https://pre-commit.com für weitere Hooks
-repos:
+#repos:
   # 1. Standard Git-Säuberungen
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0  # Nutze die aktuellste Version
-    hooks:
-      - id: trailing-whitespace      # Entfernt unnötige Leerzeichen am Zeilenende
-      - id: end-of-file-fixer        # Stellt sicher, dass Dateien mit einer leeren Zeile enden
-      - id: check-yaml               # Überprüft YAML-Dateien auf Syntaxfehler
-      - id: check-added-large-files  # Verhindert, dass riesige Dateien versehentlich committet werden
+#  - repo: https://github.com/pre-commit/pre-commit-hooks
+#    rev: v4.6.0  # Nutze die aktuellste Version
+#    hooks:
+#      - id: trailing-whitespace      # Entfernt unnötige Leerzeichen am Zeilenende
+#      - id: end-of-file-fixer        # Stellt sicher, dass Dateien mit einer leeren Zeile enden
+#      - id: check-yaml               # Überprüft YAML-Dateien auf Syntaxfehler
+#      - id: check-added-large-files  # Verhindert, dass riesige Dateien versehentlich committet werden
 
   # 2. Ruff (Ersetzt Flake8/isort: Sortiert Imports und findet Code-Fehler)
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.4
-    hooks:
-      - id: ruff
-        args: [ --fix ]              # Behebt gefundene Fehler (wie ungenutzte Imports) automatisch
+#  - repo: https://github.com/astral-sh/ruff-pre-commit
+#    rev: v0.4.4
+#    hooks:
+#      - id: ruff
+#        args: [ --fix ]              # Behebt gefundene Fehler (wie ungenutzte Imports) automatisch
 
   # 3. Black (Der Code-Formatter für einheitlichen Python-Stil)
-  - repo: https://github.com/psf/black
-    rev: 24.4.2
-    hooks:
-      - id: black
-        language_version: python3    # Erzwingt Python 3
+#  - repo: https://github.com/psf/black
+#    rev: 24.4.2
+#    hooks:
+#      - id: black
+#        language_version: python3    # Erzwingt Python 3

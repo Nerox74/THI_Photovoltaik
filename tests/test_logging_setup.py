@@ -1,0 +1,1 @@
+from THI_Photovoltaik.src.logging_setup import setup_logging

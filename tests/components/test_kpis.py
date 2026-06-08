@@ -1,0 +1,1 @@
+from THI_Photovoltaik.src.components.kpis import ersparnis_durch_pv,amortisierung_pv,auslastung_pv,tagesumme_erzeugter_strom
