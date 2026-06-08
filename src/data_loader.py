@@ -11,16 +11,28 @@ from datetime import datetime, timedelta
 
 # Überlegen wie live Daten geholt werden können --> ist immer live
 
-def verbindung_prometheus():
+
+def prometheus_connection():
+
     """
     Stellt eine Verbindung zum Prometheus Server her, sodass die Daten von diesem abgerufen werden können.
 
     """
 
-def daten_laden():
+def data_loader():
     """
     Nachdem die Verbindung mit Prometheus hergestellt worden ist, können jetzt die Daten geladen werden
+    """
+
+
+
+
+
+def data_cleaner():    """
+    Bekommt die Daten vom Data Loader und bringt diese in das Format, mit welchem wir auch schlussendlich Arbeiten wollen.
+    Format welches hier ausgegeben werden soll: (KWh, Zeit)
 
     """
+
 
 

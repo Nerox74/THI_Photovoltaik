@@ -4,7 +4,6 @@ das Dashboard über Streamlit zu erzeugen."""
 # Imports
 
 import logging
-
 import pandas as pd
 
 

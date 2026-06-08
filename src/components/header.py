@@ -2,6 +2,7 @@
 je nach Wetter anders Symbol, plus der Ort in welchem man sich gerade befindet also Ingolstadt, da dort Photovoltaik ist
 """
 
+
 # Imports
 #mateo evtl.
 
@@ -43,6 +44,7 @@ def get_date_and_time():
 def show_header():
 
     """
+
 
     Erstellt den Header für die Streamlit-App. In diesem Header wird der Ort der PV-Anlage:
     Ingolstadt, die aktuelle Uhrzeit sowie Temperatur und auch das Wetter angezeigt (sonnig, regen, usw.).
