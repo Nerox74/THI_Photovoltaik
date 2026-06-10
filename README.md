@@ -1,2 +1,0 @@
-# THI_Photovoltaik
-#CID
