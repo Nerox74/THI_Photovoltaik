@@ -1,0 +1,17 @@
+# Das ist für die Virtual Environment
+venv/
+.venv/
+env/
+# Das ist für Python
+__pycache__/
+*.egg-info/
+.pytest_cache
+# Das ist für den Mac
+.DS_Store
+# Das ist für Config & Secrets
+config.py
+# Das ist für die Logs
+*.log
+# Das ist für die IDE
+.idea/
+.idea/workspace.xml
