@@ -14,12 +14,12 @@ Das Projekt ist aktuell noch im Aufbau (Work in Progress).
 
 ## Installation & Setup
 
-1. **Repository klonen**
+1. #Repository klonen**
    ```bash
    git clone <repository-url>
    cd THI_Photovoltaik
 
-2. **Virtuelle Umgebung erstellen
+2. #Virtuelle Umgebung erstellen
   ```bash
    python -m venv venv
  ```
@@ -29,12 +29,12 @@ Das Projekt ist aktuell noch im Aufbau (Work in Progress).
   # Unter Mac/Linux:
   source venv/bin/activate
 
-3. **Abhängigkeiten installieren
+3. #Abhängigkeiten installieren
    ```bash
    pip install -r requirements.txt
    ```
 
-5. **App starten
+5. #App starten
    ```bash
    streamlit run THI_Photovoltaik.src.main.py
    ```
