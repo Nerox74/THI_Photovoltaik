@@ -9,7 +9,7 @@ __pycache__/
 # Das ist für den Mac
 .DS_Store
 # Das ist für Config & Secrets
-config.ini
+config.py
 # Das ist für die Logs
 *.log
 # Das ist für die IDE
