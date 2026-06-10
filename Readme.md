@@ -19,15 +19,15 @@ Das Projekt ist aktuell noch im Aufbau (Work in Progress).
    git clone <repository-url>
    cd THI_Photovoltaik
 
-2. Virtuelle Umgebung erstellen
+2. **Virtuelle Umgebung erstellen
    python -m venv venv
   # Unter Windows:
   venv\Scripts\activate
   # Unter Mac/Linux:
   source venv/bin/activate
 
-3. Abhängigkeiten installieren 
+3. **Abhängigkeiten installieren 
    pip install -r requirements.txt
 
-4. App starten
+4. **App starten
    streamlit run THI_Photovoltaik.src.main.py
