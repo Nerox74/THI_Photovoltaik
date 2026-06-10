@@ -1,3 +1,0 @@
-dockerignore, Readme, requirements.txt, Integration - Tests
-
-

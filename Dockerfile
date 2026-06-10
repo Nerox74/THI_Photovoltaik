@@ -15,7 +15,7 @@ WORKDIR /app
 RUN useradd -m app && chown -R app:app /app
 
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirments.txt
 
 
 COPY --chown=app:app ./src ./src
