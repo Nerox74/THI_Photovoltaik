@@ -3,13 +3,15 @@
 # eigentlich unnötigt
 
 # Imports
+import THI_Photovoltaik.src.data_loader
+
 
 # Konstante Strompreis
 strompreis = 0.39
 anschaffungskosten_pv_analge = "viel"
 
 
-def umrechnung_in_kwh():
+def umrechnung_in_kwh(strom_in_watt:float) -> float:
     """
     Hier wird Watt in Kilowattstunde umgerechnet. Dies kann durch das Integral berechnet werden.
     Wir benötigen die erzeugte KwH:
@@ -27,9 +29,8 @@ def umrechnung_in_kwh():
     """
 
 
-def differenz_erzeugt_verbraucht():
+def differenz_erzeugt_verbraucht(strom_erzeugt:float, strom_verbraucht:float) -> float:
     """
-
-    Hier wird die Differenz zwischen dem erzeugten Strom und dem Strom der verbraucht worden ist berechnet.
+    Hier wird die Differenz zwischen dem erzeugten Strom und dem Strom der verbraucht worden ist berechnet. Es werden gleich die Werte von umrechnung_in_kwh weitergerechnet.
 
     """

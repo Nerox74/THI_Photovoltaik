@@ -4,7 +4,7 @@ das Dashboard über Streamlit zu erzeugen."""
 # Imports
 
 
-def streamlit_app():
+def streamlit_app() -> None:
     """
 
     Hier wird die Streamlit App final erstellt. Die einzelnen Komponenten, die erstellt worden sind,

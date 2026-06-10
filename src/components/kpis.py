@@ -10,15 +10,14 @@ Hier werden zentrale Zahlen und Fakten in Streamlit dargestellt, die im Dashboar
 # Imports
 
 
-def tagesumme_erzeugter_strom():
+def tagesumme_erzeugter_strom() -> None:
     """
     Hier wird der kummulierte erzeugte Strom pro Tag angezeigt. Die Berechnung wird in formulas durchgeführt.
     Dargestellt in einem Rechteck.
-
     """
 
 
-def ersparnis_durch_pv():
+def ersparnis_durch_pv() -> None:
     """
     Darstellung des durch die PV-Anlage eingesparten Geld.
     Auswahl in Dropdownmenü, ob man die Ersparnis am Tag, Woche, Monat, oder im bisherigen Jahr sehen möchte. Hierfür muss überprüft werden, ob jeweils für die Zeiteinheiten überhaupt Daten vorhandne sind
@@ -28,7 +27,7 @@ def ersparnis_durch_pv():
     """
 
 
-def auslastung_pv():
+def auslastung_pv() -> None:
     """
 
     Anzeige der Auslastung der PV-Anlage in einem Kreisdiagram. 100% entspricht was eine PV-Anlage maximal an einem Tag produzieren kann.
@@ -38,7 +37,7 @@ def auslastung_pv():
     """
 
 
-def amortisierung_pv():
+def amortisierung_pv() -> None:
     """
 
     Zeigt einen Balken an. Dieser ist mit grüner Farbe gefüllt jedoch nur Prozentual und in der Mitte von diesen steht eine Prozentzahl. Diese Prozentzahl und die Länge des grünen Balkens im verhältnis zur Gesamtlänge des Rechteckes zeigt an,
@@ -48,5 +47,11 @@ def amortisierung_pv():
     Rechnung: Strompreis multipliziert mit erzeugnis seit Beschaffung --> Prozentzahl wie viel ist das von den Gesamtkosten der Anschaffung
 
     --> Berechnung findet 1 mal am Tag statt um 9 Uhr
+
+    """
+
+def show_kpis()-> None:
+    """
+    Rendert alle KPIS in Boxen im Streamlit dashboard
 
     """

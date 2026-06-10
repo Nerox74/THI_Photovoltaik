@@ -9,14 +9,13 @@ je nach Wetter anders Symbol, plus der Ort in welchem man sich gerade befindet a
 # Verbindung mit API
 
 
-def api_connection():
+def api_connection() -> dict:
     """
     Stellt eine Verbindung zur Wetter-Api her.
-
     """
 
 
-def get_weather_data():
+def get_weather_data() -> str | int:
     """
 
     Aktuelle Temperatur und das aktuelle Wetter über die Wetter-Api herausfinden, in Ingolstadt--> sonnig, regen usw.
@@ -26,7 +25,7 @@ def get_weather_data():
     """
 
 
-def get_date_and_time():
+def get_date_and_time() -> str:
     """
 
     Hier wird das akutelle Datum und die aktuelle Uhrzeit herausgefunden.
@@ -37,7 +36,7 @@ def get_date_and_time():
     """
 
 
-def show_header():
+def show_header() -> None:
     """
 
 
