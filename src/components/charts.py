@@ -7,7 +7,8 @@ Hier werden die Charts erstellt, in welchen die Stromerzeugung der Photovoltaik 
 
 import formulas
 
-def create_chart_kalendergrafik() -> None :
+
+def create_chart_kalendergrafik() -> None:
     """
     Diese Kalendergrafik zeigt farblich gekennzeichnet die kumulierten Differenzen zwischen Verbrauch und Erzeugung pro Tag.
     Ein (negativer) Überschuss an Verbrauch wird in rot gekennzeichnet, ein (positiver) Überschuss wird in grün gekennzeichnet.
@@ -26,6 +27,7 @@ def create_chart_kurvendiagramm() -> None:
     Dieses Kurvendiagramm zeigt zwei tägliche Verläufe der Erzeugung in kWh und des Verbrauchs in kWh.
     Genutzt werden genutzt um die minimalen und maximalen Werte zu ermitteln.
     """
+
 
 def show_charts() -> None:
     """

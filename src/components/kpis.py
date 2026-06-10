@@ -14,6 +14,7 @@ def tagesumme_erzeugter_strom() -> None:
     """
     Hier wird der kummulierte erzeugte Strom pro Tag angezeigt. Die Berechnung wird in formulas durchgeführt.
     Dargestellt in einem Rechteck.
+
     """
 
 
@@ -50,7 +51,8 @@ def amortisierung_pv() -> None:
 
     """
 
-def show_kpis()-> None:
+
+def show_kpis() -> None:
     """
     Rendert alle KPIS in Boxen im Streamlit dashboard
 
