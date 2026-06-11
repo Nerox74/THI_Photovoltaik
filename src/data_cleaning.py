@@ -1,4 +1,4 @@
-"""Stellt eine Verbindung zu Prometheus her und holt von dort die CSV-Dateien"""
+"""Stellt eine Verbindung zu Prometheus her und holt von dort die CSV-Dateien, bereinigt die Daten und speichert die bereinigten Daten in cleaned_data.csv"""
 
 # Imports
 
