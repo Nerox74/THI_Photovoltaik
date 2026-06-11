@@ -15,7 +15,7 @@ def api_connection() -> dict:
     """
 
 
-def get_weather_data() -> str | int:
+def get_weather_data() -> tuple[str, int]:
     """
 
     Aktuelle Temperatur und das aktuelle Wetter über die Wetter-Api herausfinden, in Ingolstadt--> sonnig, regen usw.
@@ -25,7 +25,7 @@ def get_weather_data() -> str | int:
     """
 
 
-def get_date_and_time() -> str:
+def get_date_and_time() -> tuple[str, str]:
     """
 
     Hier wird das akutelle Datum und die aktuelle Uhrzeit herausgefunden.

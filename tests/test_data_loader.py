@@ -1,17 +1,13 @@
-from THI_Photovoltaik.src.daten import (
-    data_cleaner,
-    data_loader,
-    prometheus_connection,
-)
+from THI_Photovoltaik.src.data_cleaning import PrometheusDatenbeschaffung
 
 
-def test_data_cleaner():
+def test_prometheus_connection() -> None:
     pass
 
 
-def test_data_loader():
+def test_data_loader() -> None:
     pass
 
 
-def test_prometheus_connection():
+def test_data_cleaner() -> None:
     pass

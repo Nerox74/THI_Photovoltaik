@@ -1,0 +1,1 @@
+""" Hier wird die Config für Github beispielhaft dargestellt, sodass man weiß wie diese Aufgebaut ist"""

@@ -2,10 +2,11 @@
 Hier werden die Charts erstellt, in welchen die Stromerzeugung der Photovoltaik visuallisert wird"
 
 """
+from THI_Photovoltaik.src.components import formulas
 
 # Imports, ebenso Formeln die gebraucht werden
 
-import formulas
+
 
 
 def create_chart_kalendergrafik() -> None:

@@ -15,7 +15,7 @@ WORKDIR /app
 RUN useradd -m app && chown -R app:app /app
 
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirments.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 
 COPY --chown=app:app ./src ./src
@@ -23,13 +23,11 @@ COPY --chown=app:app ./src ./src
 #wird nicht mehr als root ausgeführt sondern als app
 USER app
 
-EXPOSE 8080
+EXPOSE 8501
 
-#Hauptprogramm das immer ausgeführt werden soll
-ENTRYPOINT ["python"]
+ENTRYPOINT ["streamlit", "run"]
 
-#Standard Argumente werden an Entrypoint übergeben --> können leicht überschrieben werden
-CMD ["src/main.py"]
+CMD ["src/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
 
 
