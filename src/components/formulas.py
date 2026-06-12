@@ -1,13 +1,11 @@
 """Hier werden Berechnungen durchgeführt, deren Ergebnis in mehreren Files benötigt werden"""
 
-# eigentlich unnötigt
-
 # Imports
-import THI_Photovoltaik.src.daten
+import THI_Photovoltaik.src.data_cleaning
 
 # Konstante Strompreis
-strompreis = 0.39
-anschaffungskosten_pv_analge = "viel"
+STROMPREIS: float = 0.39
+ANSCHAFFUNGSKOSTEN_PV_ANLAGE: float = 15_000.0  # Muss noch recherchiert werden
 
 
 def umrechnung_in_kwh(strom_in_watt: float) -> float:
