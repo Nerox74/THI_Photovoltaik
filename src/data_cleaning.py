@@ -13,7 +13,6 @@ import urllib3
 #Ordner in welchem env File liegt --> 1 Ornder über src
 env_path = Path(__file__).resolve().parent.parent / ".env"
 
-#IN Environ Laden
 load_dotenv(dotenv_path=env_path)
 
 #Jetzt kann über environ auf das File zugegriffen werden
@@ -24,26 +23,45 @@ API_KEY= os.environ.get("API_KEY")
 # Unterdrückt die "InsecureRequestWarning" (weil wir mit verify=False arbeiten)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Genau derselbe Header wie im funktionierenden curl: "X-API-Key"
 headers = {"X-API-Key": API_KEY.strip(), "Accept": "application/json"}
 
 response = requests.get(URL, headers=headers, verify=False)
-
-print("Status:", response.status_code)
+data = response.json()
+#print("Status:", response.status_code)
 print(response.json())
 
 
+# Daten auseinander nehmen und in einzelteile zerlegen
+# Daten Formatieren und richtig machen
+# Daten speichern
 
+# iterativ alle 7 Sekunden, wenn daten nicht veränderlich oder keine neuen Datne dann 14 Sekunden noch einmal schauen
+# Wenn wieder nicht neu dann 28 Sekunden dann immer so weiter exponentiell
 
+from datetime import datetime
+uhrzeit = datetime.fromisoformat(data['collected_at']).strftime("%H:%M")
 
-class PrometheusDatenbeschaffung:
+# 2. Summe der PV-Erzeugung (generation) in kW
+summe_generation_w = sum(item['value'] for item in data['data'] if item['type'] == 'generation')
+summe_generation_kw = round(summe_generation_w / 1000, 2)
+
+# 3. Summe des Verbrauchs/Einspeisung (consumption) in kW
+summe_einspeisung_w = sum(item['value'] for item in data['data'] if item['type'] == 'consumption')
+summe_einspeisung_kw = round(summe_einspeisung_w / 1000, 2)
+
+# Ergebnis für dein Dashboard
+print(f"Uhrzeit: {uhrzeit}")
+print(f"PV-Erzeugung: {summe_generation_kw} kW")
+print(f"Netz-Wert: {summe_einspeisung_kw} kW")
+
+class Datenbeschaffung:
 
     def __init__(self, api: str, token: str) -> None:
         self.api = api
         self.token = token
 
 
-    def prometheus_connection(self) -> None:
+    def api_connection(self) -> None:
         """
         Stellt eine Verbindung zum Prometheus Server her, sodass die Daten von diesem abgerufen werden können.
 
