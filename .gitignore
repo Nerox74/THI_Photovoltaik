@@ -15,4 +15,4 @@ config.py
 # Das ist für die IDE
 .idea/
 .idea/workspace.xml
-Credentials.txt
+.env
