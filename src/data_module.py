@@ -13,7 +13,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 
-INTERVALL_SEKUNDEN = 5 * 60
+INTERVALL_SEKUNDEN = 5
 #Maximal wird 2 Stunden auf neue Daten gewartet, länger nicht
 MAX_WAIT_TIME = 7200
 
@@ -76,12 +76,11 @@ def zeile_speichern(zeile: dict) -> None:
 
 
 def automatische_abfrage() -> None:
-    """Fragt den Server alle 5 Minuten ab und schreibt die Daten in cleaned_data.csv."""
+    """Fragt den Server alle 5 Sekunden ab und schreibt die Daten in cleaned_data.csv."""
     letzter_zeitstempel = None
     aktuelle_wartezeit = INTERVALL_SEKUNDEN
 
     # Wenn alle nächste 5min alle Daten genauso sind, dann
-
 
     while True:
         try:
