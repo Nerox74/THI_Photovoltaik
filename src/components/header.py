@@ -3,16 +3,9 @@ je nach Wetter anders Symbol, plus der Ort in welchem man sich gerade befindet a
 """
 
 # Imports
-# mateo evtl.
-import openmeteo_requests
-import pandas as ps
-import requests_cache
-from retry_requests import retry
-
 # Verbindung mit API
 import datetime
 import openmeteo_requests
-import pandas as pd
 import requests_cache
 import streamlit as st
 from retry_requests import retry
