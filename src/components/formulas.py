@@ -1,7 +1,7 @@
 """Hier werden Berechnungen durchgeführt, deren Ergebnis in mehreren Files benötigt werden"""
 
 # Imports
-import THI_Photovoltaik.src.data_cleaning
+import THI_Photovoltaik.src.data_module
 
 # Konstante Strompreis
 STROMPREIS: float = 0.39

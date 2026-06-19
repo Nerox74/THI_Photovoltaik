@@ -1,1 +1,0 @@
-"Hier kommen die API-Keys und Passwörter rein. Wird nicht in github hochgeladen"

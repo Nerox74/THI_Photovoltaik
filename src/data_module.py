@@ -13,10 +13,13 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 
+INTERVALL_SEKUNDEN = 5 * 60
+#Maximal wird 2 Stunden auf neue Daten gewartet, länger nicht
+MAX_WAIT_TIME = 7200
+
 
 #Ordner in welchem env File liegt --> 1 Ornder über src
 env_path = Path(__file__).resolve().parent.parent / ".env"
-
 load_dotenv(dotenv_path=env_path)
 
 #Jetzt kann über environ auf das File zugegriffen werden
@@ -25,11 +28,10 @@ API_KEY= os.environ.get("API_KEY")
 
 CSV_PATH = Path(__file__).resolve().parent / "cleaned_data.csv"
 
-INTERVALL_SEKUNDEN = 5 * 60
 # Unterdrückt die "InsecureRequestWarning" (weil wir mit verify=False arbeiten)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 HEADERS = {"X-API-Key": API_KEY.strip(), "Accept": "application/json"}
+
 
 def daten_abrufen() -> dict:
     """Ruft die aktuellen Rohdaten vom Server ab."""
@@ -37,9 +39,12 @@ def daten_abrufen() -> dict:
     response.raise_for_status()
     return response.json()
 
+#Datenbeispiel vom Server
+#{"collected_at":"2026-06-19T09:39:23.998841+02:00","data":[{"path":"BT A Süd/F/G/H/J > Devices > GU03 Einspeisung > Datapoints > InstantaneousValues > Ptot","type":"consumption","value":309974.25},{"path":"BT A Süd/F/G/H/J > Devices > 5Q2 PV-Anlage > Datapoints > InstantaneousValues > Ptot","type":"generation","value":139447.546875},{"path":"BT A Süd/F/G/H/J > Devices > GU17_PV > Datapoints > InstantaneousValues > Ptot","type":"generation","value":11087.197265625},{"path":"BT A Süd/F/G/H/J > Devices > PV-BT-A_F > Datapoints > InstantaneousValues > Ptot","type":"generation","value":47684.484375}],"age_seconds":0.383447}
 
 def daten_bereinigen(data: dict) -> dict:
     """Bringt die Rohdaten in das Zielformat: (Zeit, PV-Erzeugung kW, Netz-Wert kW)."""
+
     collected_at = data["collected_at"]
     uhrzeit = datetime.fromisoformat(collected_at).strftime("%H:%M")
 
@@ -73,13 +78,17 @@ def zeile_speichern(zeile: dict) -> None:
 def automatische_abfrage() -> None:
     """Fragt den Server alle 5 Minuten ab und schreibt die Daten in cleaned_data.csv."""
     letzter_zeitstempel = None
+    aktuelle_wartezeit = INTERVALL_SEKUNDEN
+
+    # Wenn alle nächste 5min alle Daten genauso sind, dann
+
 
     while True:
         try:
             rohdaten = daten_abrufen()
             zeile = daten_bereinigen(rohdaten)
 
-            # Doppelte Datensätze überspringen (gleicher collected_at)
+            # Doppelte Datensätze überspringen (gleicher collected_at) -> dann Zeit, wenn kleiner als 2 Stunden, dann Zeit verdoppeln also 5 auf 10 min usw.
             if zeile["collected_at"] != letzter_zeitstempel:
                 zeile_speichern(zeile)
                 letzter_zeitstempel = zeile["collected_at"]
@@ -87,13 +96,26 @@ def automatische_abfrage() -> None:
                     f"[{zeile['uhrzeit']}] gespeichert -> "
                     f"PV: {zeile['pv_erzeugung_kw']} kW | Netz: {zeile['netz_wert_kw']} kW"
                 )
+
+                aktuelle_wartezeit = INTERVALL_SEKUNDEN
+
             else:
-                print(f"[{zeile['uhrzeit']}] keine neuen Daten – übersprungen")
+                aktuelle_wartezeit = min(
+                    aktuelle_wartezeit * 2, MAX_WAIT_TIME
+                )
+
+                print(
+                    f"[{zeile['uhrzeit']}] keine neuen Daten – übersprungen. "
+                    f"Nächster Versuch in {aktuelle_wartezeit / 60:.1f} Minuten."
+                )
 
         except Exception as fehler:
+            aktuelle_wartezeit = min(
+                aktuelle_wartezeit * 2, MAX_WAIT_TIME
+            )
             print(f"Fehler beim Abruf: {fehler}")
 
-        time.sleep(INTERVALL_SEKUNDEN)
+        time.sleep(aktuelle_wartezeit)
 
 
 if __name__ == "__main__":

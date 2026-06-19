@@ -16,3 +16,4 @@ config.py
 .idea/
 .idea/workspace.xml
 .env
+*.csv

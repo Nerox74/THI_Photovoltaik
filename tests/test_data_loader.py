@@ -1,4 +1,4 @@
-from THI_Photovoltaik.src.data_cleaning import PrometheusDatenbeschaffung
+from THI_Photovoltaik.src.data_module import PrometheusDatenbeschaffung
 
 
 def test_prometheus_connection() -> None:

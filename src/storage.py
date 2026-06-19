@@ -1,7 +1,7 @@
 """Speichert die bereinigten PV-Daten persistent,
 damit historische Werte für Charts und KPIs verfügbar bleiben."""
 
-import data_cleaning
+import data_module
 
 class DataStorage:
     """Verwaltet das Speichern und Laden der bereinigten PV-Daten."""
