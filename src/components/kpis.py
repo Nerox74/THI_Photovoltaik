@@ -1,4 +1,4 @@
-"""
+ """
 Hier werden zentrale Zahlen und Fakten in Streamlit dargestellt, die im Dashboard angezeigt werden.
 
 1.Vergleich: Strompreiskosten wie viel Hergestellt --> wie viel Geld wird gespart --> Api verbindung mit aktuellen Strompreis
