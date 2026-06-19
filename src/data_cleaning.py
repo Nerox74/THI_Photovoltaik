@@ -2,13 +2,17 @@
 from streamlit.runtime.credentials import Credentials
 
 # Imports
+import csv
 import requests
 import os
+import time
 from pathlib import Path
 from dotenv import load_dotenv
 import urllib3
+from datetime import datetime
+from dotenv import load_dotenv
 
-#Wenn nicht funktioniert OPC Server -> exponentielle Wartezeit
+
 
 #Ordner in welchem env File liegt --> 1 Ornder über src
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -19,67 +23,78 @@ load_dotenv(dotenv_path=env_path)
 URL = os.environ.get("JUPYTER_HUB_URL")
 API_KEY= os.environ.get("API_KEY")
 
+CSV_PATH = Path(__file__).resolve().parent / "cleaned_data.csv"
 
+INTERVALL_SEKUNDEN = 5 * 60
 # Unterdrückt die "InsecureRequestWarning" (weil wir mit verify=False arbeiten)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-headers = {"X-API-Key": API_KEY.strip(), "Accept": "application/json"}
+HEADERS = {"X-API-Key": API_KEY.strip(), "Accept": "application/json"}
 
-response = requests.get(URL, headers=headers, verify=False)
-data = response.json()
-#print("Status:", response.status_code)
-print(response.json())
-
-
-# Daten auseinander nehmen und in einzelteile zerlegen
-# Daten Formatieren und richtig machen
-# Daten speichern
-
-# iterativ alle 7 Sekunden, wenn daten nicht veränderlich oder keine neuen Datne dann 14 Sekunden noch einmal schauen
-# Wenn wieder nicht neu dann 28 Sekunden dann immer so weiter exponentiell
-
-from datetime import datetime
-uhrzeit = datetime.fromisoformat(data['collected_at']).strftime("%H:%M")
-
-# 2. Summe der PV-Erzeugung (generation) in kW
-summe_generation_w = sum(item['value'] for item in data['data'] if item['type'] == 'generation')
-summe_generation_kw = round(summe_generation_w / 1000, 2)
-
-# 3. Summe des Verbrauchs/Einspeisung (consumption) in kW
-summe_einspeisung_w = sum(item['value'] for item in data['data'] if item['type'] == 'consumption')
-summe_einspeisung_kw = round(summe_einspeisung_w / 1000, 2)
-
-# Ergebnis für dein Dashboard
-print(f"Uhrzeit: {uhrzeit}")
-print(f"PV-Erzeugung: {summe_generation_kw} kW")
-print(f"Netz-Wert: {summe_einspeisung_kw} kW")
-
-class Datenbeschaffung:
-
-    def __init__(self, api: str, token: str) -> None:
-        self.api = api
-        self.token = token
+def daten_abrufen() -> dict:
+    """Ruft die aktuellen Rohdaten vom Server ab."""
+    response = requests.get(URL, headers=HEADERS, verify=False, timeout=30)
+    response.raise_for_status()
+    return response.json()
 
 
-    def api_connection(self) -> None:
-        """
-        Stellt eine Verbindung zum Prometheus Server her, sodass die Daten von diesem abgerufen werden können.
+def daten_bereinigen(data: dict) -> dict:
+    """Bringt die Rohdaten in das Zielformat: (Zeit, PV-Erzeugung kW, Netz-Wert kW)."""
+    collected_at = data["collected_at"]
+    uhrzeit = datetime.fromisoformat(collected_at).strftime("%H:%M")
 
-        """
-        pass
+    summe_generation_w = sum(
+        item["value"] for item in data["data"] if item["type"] == "generation"
+    )
+    summe_einspeisung_w = sum(
+        item["value"] for item in data["data"] if item["type"] == "consumption"
+    )
+
+    return {
+        "collected_at": collected_at,
+        "uhrzeit": uhrzeit,
+        "pv_erzeugung_kw": round(summe_generation_w / 1000, 2),
+        "netz_wert_kw": round(summe_einspeisung_w / 1000, 2),
+    }
 
 
-    def data_loader(self) -> dict:
-        """
-        Nachdem die Verbindung mit Prometheus hergestellt worden ist, können jetzt die Daten geladen werden
-        """
-        pass
+def zeile_speichern(zeile: dict) -> None:
+    """Hängt eine bereinigte Zeile an cleaned_data.csv an (Header wird einmalig geschrieben)."""
+    feldnamen = ["collected_at", "uhrzeit", "pv_erzeugung_kw", "netz_wert_kw"]
+    datei_existiert = CSV_PATH.exists() and CSV_PATH.stat().st_size > 0
+
+    with open(CSV_PATH, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=feldnamen)
+        if not datei_existiert:
+            writer.writeheader()
+        writer.writerow(zeile)
 
 
-    def data_cleaner(self,daten: dict) -> dict:
-        """
-        Bekommt die Daten vom Data Loader und bringt diese in das Format, mit welchem wir auch schlussendlich Arbeiten wollen.
-        Format welches hier ausgegeben werden soll: (KWh, Zeit)
+def automatische_abfrage() -> None:
+    """Fragt den Server alle 5 Minuten ab und schreibt die Daten in cleaned_data.csv."""
+    letzter_zeitstempel = None
 
-         """
-        pass
+    while True:
+        try:
+            rohdaten = daten_abrufen()
+            zeile = daten_bereinigen(rohdaten)
+
+            # Doppelte Datensätze überspringen (gleicher collected_at)
+            if zeile["collected_at"] != letzter_zeitstempel:
+                zeile_speichern(zeile)
+                letzter_zeitstempel = zeile["collected_at"]
+                print(
+                    f"[{zeile['uhrzeit']}] gespeichert -> "
+                    f"PV: {zeile['pv_erzeugung_kw']} kW | Netz: {zeile['netz_wert_kw']} kW"
+                )
+            else:
+                print(f"[{zeile['uhrzeit']}] keine neuen Daten – übersprungen")
+
+        except Exception as fehler:
+            print(f"Fehler beim Abruf: {fehler}")
+
+        time.sleep(INTERVALL_SEKUNDEN)
+
+
+if __name__ == "__main__":
+    automatische_abfrage()
