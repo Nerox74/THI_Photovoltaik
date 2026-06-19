@@ -2,8 +2,7 @@
 Hier werden die Charts erstellt, in welchen die Stromerzeugung der Photovoltaik visuallisert wird"
 
 """
-from THI_Photovoltaik.src.components.formulas import umrechnung_in_kwh, differenz_erzeugt_verbraucht
-
+from components.formulas import umrechnung_in_kwh, differenz_erzeugt_verbraucht
 # Imports, ebenso Formeln die gebraucht werden
 
 import numpy as np
@@ -14,7 +13,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
-from formulas import umrechnung_in_kwh
 
 # ─────────────────────────────────────────────
 # KONFIGURATION
@@ -122,7 +120,7 @@ def draw_calendar(data: pd.Series, year: int, title: str, unit: str):
     plt.savefig("pv_calendar.png", dpi=150, bbox_inches="tight",
                 facecolor=fig.get_facecolor())
     print("✅ Gespeichert als 'pv_calendar.png'")
-    plt.show()
+    return fig
 
 
 def create_chart_balkendiagramm(df: pd.DataFrame) -> None:

@@ -3,7 +3,7 @@
 # Imports
 import pandas as pd
 import numpy as np
-import THI_Photovoltaik.src.data_cleaning
+
 
 
 # Konstante Strompreis

@@ -7,7 +7,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from THI_Photovoltaik.src.components import formulas
+from components import formulas
 
 # cleaned_data.csv liegt in src/ -> von components/ aus eine Ebene hoch
 CSV_PATH = Path(__file__).resolve().parent.parent / "cleaned_data.csv"
