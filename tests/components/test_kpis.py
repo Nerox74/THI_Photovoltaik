@@ -6,18 +6,19 @@ from THI_Photovoltaik.src.components.kpis import (
 )
 import unittest
 
+class TestKpis(unittest.TestCase):
 
-def test_amortisierung_pv():
-    pass
-
-
-def test_ersparnis_durch_pv():
-    pass
+    def test_amortisierung_pv():
+        pass
 
 
-def test_auslastung_pv():
-    pass
+    def test_ersparnis_durch_pv():
+        pass
 
 
-def test_tagesumme_erzeugter_strom():
-    pass
+    def test_auslastung_pv():
+        pass
+
+
+    def test_tagesumme_erzeugter_strom():
+        pass

@@ -6,16 +6,17 @@ from THI_Photovoltaik.src.components.header import (
 )
 import unittest
 
-def test_api_connection():
-    pass
+class TestHeader(unittest.TestCase):
+    def test_api_connection():
+        pass
 
 
-def test_show_header():
-    pass
+    def test_show_header():
+        pass
 
 
-def test_get_date_and_time():
-    pass
+    def test_get_date_and_time():
+        pass
 
 
 def test_get_weather_data():

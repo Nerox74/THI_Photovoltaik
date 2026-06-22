@@ -4,9 +4,11 @@ from THI_Photovoltaik.src.components.formulas import (
 )
 import unittest
 
-def test_differenz_erzeugt_verbraucht():
-    pass
+class TestFormulas(unittest.TestCase):
+
+    def test_differenz_erzeugt_verbraucht():
+        pass
 
 
-def test_umrechnung_in_kwh():
-    pass
+    def test_umrechnung_in_kwh():
+        pass

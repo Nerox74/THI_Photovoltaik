@@ -1,5 +1,7 @@
 from THI_Photovoltaik.src.main import streamlit_app
 import unittest
 
-def test_main():
-    pass
+class TestMain(unittest.TestCase):
+
+    def test_main():
+        pass
