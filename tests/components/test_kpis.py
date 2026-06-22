@@ -4,6 +4,7 @@ from THI_Photovoltaik.src.components.kpis import (
     auslastung_pv,
     tagesumme_erzeugter_strom,
 )
+import unittest
 
 
 def test_amortisierung_pv():

@@ -3,6 +3,7 @@ from THI_Photovoltaik.src.components.charts import (
     create_chart_kalendergrafik,
     create_chart_kurvendiagramm,
 )
+import unittest
 
 
 def test_create_chart_balkendiagramm():

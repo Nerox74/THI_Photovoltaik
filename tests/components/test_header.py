@@ -4,7 +4,7 @@ from THI_Photovoltaik.src.components.header import (
     get_date_and_time,
     get_weather_data,
 )
-
+import unittest
 
 def test_api_connection():
     pass
