@@ -41,6 +41,7 @@ def daten_abrufen() -> dict:
     """Ruft die aktuellen Rohdaten vom Server ab."""
     response = requests.get(URL, headers=HEADERS, verify=False, timeout=30)
     response.raise_for_status()
+    logger.info("Daten von Server wurden heruntergeladen")
     return response.json()
 
 #Datenbeispiel vom Server
@@ -95,7 +96,7 @@ def automatische_abfrage() -> None:
             if zeile["collected_at"] != letzter_zeitstempel:
                 zeile_speichern(zeile)
                 letzter_zeitstempel = zeile["collected_at"]
-                print(
+                logger.info(
                     f"[{zeile['uhrzeit']}] gespeichert -> "
                     f"PV: {zeile['pv_erzeugung_kw']} kW | Netz: {zeile['netz_wert_kw']} kW"
                 )
@@ -107,16 +108,17 @@ def automatische_abfrage() -> None:
                     aktuelle_wartezeit * 2, MAX_WAIT_TIME
                 )
 
-                print(
+                logger.info(
                     f"[{zeile['uhrzeit']}] keine neuen Daten – übersprungen. "
                     f"Nächster Versuch in {aktuelle_wartezeit / 60:.1f} Minuten."
                 )
 
         except Exception as fehler:
+            logger.error(f"Fehler beim Abruf (evtl. Server abgestürzt: {fehler}")
             aktuelle_wartezeit = min(
                 aktuelle_wartezeit * 2, MAX_WAIT_TIME
             )
-            print(f"Fehler beim Abruf: {fehler}")
+
 
         time.sleep(aktuelle_wartezeit)
 

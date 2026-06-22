@@ -4,6 +4,8 @@ je nach Wetter anders Symbol, plus der Ort in welchem man sich gerade befindet a
 
 # Imports
 import datetime
+import traceback
+
 import openmeteo_requests
 import requests_cache
 import streamlit as st
@@ -57,7 +59,8 @@ def get_weather_data() -> tuple[float, str, str]:
 
         return temp, weather_desc, icon
 
-    except Exception:
+    except Exception as e:
+        logger.error(f"Fehler beim laden der Wetterdaten von der Mateo-API: {e}")
         return 20.0, "Keine Daten", "⚠️"
 
 
