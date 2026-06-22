@@ -9,11 +9,15 @@ import requests_cache
 import streamlit as st
 from retry_requests import retry
 
+import logging
+
 # Setup the Open-Meteo API client with cache and retry on error
 cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
 retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
 openmeteo = openmeteo_requests.Client(session=retry_session)
 
+
+logger = logging.getLogger(__name__)
 
 def get_weather_data() -> tuple[float, str, str]:
     """

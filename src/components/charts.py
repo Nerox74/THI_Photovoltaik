@@ -10,6 +10,10 @@ import calendar
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 DATEI_PFAD = "cleaned_data.csv"
 YEAR = 2026

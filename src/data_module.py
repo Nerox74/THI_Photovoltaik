@@ -11,6 +11,10 @@ from dotenv import load_dotenv
 import urllib3
 from datetime import datetime
 from dotenv import load_dotenv
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 INTERVALL_SEKUNDEN = 5

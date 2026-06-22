@@ -8,6 +8,10 @@ import streamlit as st
 
 from components import formulas
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 CSV_PATH = Path(__file__).resolve().parent.parent / "cleaned_data.csv"
 MAX_TAGESERZEUGUNG_KWH: float = 50.0
 KPI_BG = "#1e2130"

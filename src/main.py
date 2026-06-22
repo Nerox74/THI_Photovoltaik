@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import logging
+from logging_setup import setup_logging
 
 from components.charts import (
     draw_calendar_3monate,
@@ -18,6 +20,12 @@ from components.header import show_header
 from components.kpis import show_kpis
 
 CSV_PATH = Path(__file__).resolve().parent / "cleaned_data.csv"
+
+
+setup_logging("projekt.log")
+logger = logging.getLogger(__name__)
+logging.info("Die App wurde gestartet")
+
 
 
 def streamlit_app() -> None:
