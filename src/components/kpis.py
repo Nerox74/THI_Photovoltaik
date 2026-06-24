@@ -6,7 +6,7 @@ import math
 import pandas as pd
 import streamlit as st
 
-import config
+from THI_Photovoltaik import config
 from components import formulas
 
 logger = logging.getLogger(__name__)

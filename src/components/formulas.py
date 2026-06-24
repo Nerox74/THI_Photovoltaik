@@ -5,7 +5,7 @@ import logging
 
 import pandas as pd
 
-import config
+from THI_Photovoltaik import config
 
 logger = logging.getLogger(__name__)
 

@@ -2,13 +2,12 @@
 und verwendet, um das Dashboard über Streamlit zu erzeugen."""
 
 import logging
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-import config
+from THI_Photovoltaik import config
 from logging_setup import setup_logging
 from components.charts import (
     draw_calendar_3monate,

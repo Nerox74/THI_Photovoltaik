@@ -12,7 +12,7 @@ import requests
 import urllib3
 from dotenv import load_dotenv
 
-import config
+from THI_Photovoltaik import config
 
 logger = logging.getLogger(__name__)
 
