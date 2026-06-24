@@ -1,19 +1,19 @@
-"""Hier wird das Dashboard erzeugt. Es werden alle anderen Python Files hier importiert und verwendet, um
-das Dashboard über Streamlit zu erzeugen."""
+"""Hier wird das Dashboard erzeugt. Es werden alle anderen Python-Files hier importiert
+und verwendet, um das Dashboard über Streamlit zu erzeugen."""
 
+import logging
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
-import logging
-from logging_setup import setup_logging
 
+import config
+from logging_setup import setup_logging
 from components.charts import (
     draw_calendar_3monate,
     create_chart_balkendiagramm,
     create_chart_kurvendiagramm,
-    YEAR,
-    UNIT,
 )
 from components.formulas import differenz_erzeugt_verbraucht
 from components.header import show_header
@@ -21,18 +21,13 @@ from components.kpis import show_kpis
 
 CSV_PATH = Path(__file__).resolve().parent / "cleaned_data.csv"
 
-
 setup_logging("projekt.log")
 logger = logging.getLogger(__name__)
-logging.info("Die App wurde gestartet")
-
+logger.info("Die App wurde gestartet")
 
 
 def streamlit_app() -> None:
-    """
-    Hier wird die Streamlit App final erstellt. Die einzelnen Komponenten, die erstellt worden sind,
-    werden hier verwendet und zu einem Konstrukt zusammengebaut.
-    """
+    """Baut die Streamlit-App aus den einzelnen Komponenten zusammen."""
     st.set_page_config(
         page_title="PV Dashboard – THI",
         page_icon="☀️",
@@ -43,7 +38,14 @@ def streamlit_app() -> None:
     show_header()
 
     # ── Daten laden ─────────────────────────────────────
-    df   = pd.read_csv(CSV_PATH)
+    try:
+        df = pd.read_csv(CSV_PATH)
+        logger.info("CSV geladen: %d Zeilen", len(df))
+    except FileNotFoundError:
+        logger.error("cleaned_data.csv nicht gefunden unter %s", CSV_PATH)
+        st.error("Keine Daten vorhanden – läuft das Sammel-Skript?")
+        st.stop()
+
     data = differenz_erzeugt_verbraucht(df)
 
     # ── KPIs ────────────────────────────────────────────
@@ -54,14 +56,20 @@ def streamlit_app() -> None:
     # ── Zeile 1: Balken + Kurve nebeneinander ───────────
     col_l, col_r = st.columns(2)
     with col_l:
-        st.pyplot(create_chart_balkendiagramm(df))
+        fig_balken = create_chart_balkendiagramm(df)
+        st.pyplot(fig_balken)
+        plt.close(fig_balken)
     with col_r:
-        st.pyplot(create_chart_kurvendiagramm(df))
+        fig_kurve = create_chart_kurvendiagramm(df)
+        st.pyplot(fig_kurve)
+        plt.close(fig_kurve)
 
     st.divider()
 
     # ── Zeile 2: 3-Monats-Kalender volle Breite ─────────
-    st.pyplot(draw_calendar_3monate(data, UNIT))
+    fig_kalender = draw_calendar_3monate(data, config.UNIT)
+    st.pyplot(fig_kalender)
+    plt.close(fig_kalender)
 
 
 if __name__ == "__main__":

@@ -1,35 +1,32 @@
-"""Hier wird der Header der Streamlit App erstellt. In diesem wird das aktuelle Wetter und die Temperatur dargestellt,
-je nach Wetter anders Symbol, plus der Ort in welchem man sich gerade befindet also Ingolstadt, da dort Photovoltaik ist
-"""
+"""Header der Streamlit-App: aktuelles Wetter, Temperatur, Datum/Uhrzeit und Standort."""
 
-# Imports
 import datetime
-import traceback
+import logging
 
 import openmeteo_requests
 import requests_cache
 import streamlit as st
 from retry_requests import retry
 
-import logging
+import config
 
-# Setup the Open-Meteo API client with cache and retry on error
-cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
+# Open-Meteo-Client mit Cache und Retry
+cache_session = requests_cache.CachedSession(".cache", expire_after=3600)
 retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
 openmeteo = openmeteo_requests.Client(session=retry_session)
 
-
 logger = logging.getLogger(__name__)
+
 
 def get_weather_data() -> tuple[float, str, str]:
     """
-    Holt die aktuellen Wetterdaten für Ingolstadt von der Open Meteo API
-    Returns: tuple:(Temperatur in Grad Celsius, Wetterbeschreibung, Icon)
+    Holt die aktuellen Wetterdaten für den konfigurierten Standort von Open-Meteo.
+    Returns: (Temperatur °C, Wetterbeschreibung, Icon)
     """
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
-        "latitude": 48.76361,
-        "longitude": 11.42611,
+        "latitude": config.STANDORT_LAT,
+        "longitude": config.STANDORT_LON,
         "current": ["temperature_2m", "weather_code"],
         "timezone": "Europe/Berlin",
         "forecast_days": 1,
@@ -57,30 +54,23 @@ def get_weather_data() -> tuple[float, str, str]:
         else:
             weather_desc, icon = "Bewölkt", "☁️"
 
+        logger.debug("Wetter: %s, %.1f °C", weather_desc, temp)
         return temp, weather_desc, icon
 
     except Exception as e:
-        logger.error(f"Fehler beim laden der Wetterdaten von der Mateo-API: {e}")
+        logger.error("Fehler beim Laden der Wetterdaten von der Open-Meteo-API: %s", e)
         return 20.0, "Keine Daten", "⚠️"
 
 
 def get_date_and_time() -> tuple[str, str]:
-    """
-    Hier wird das aktuelle Datum und die aktuelle Uhrzeit herausgefunden.
-    Returns: date(str), time(str)
-    """
+    """Aktuelles Datum und Uhrzeit als Strings. Returns: (date, time)."""
     now = datetime.datetime.now()
-    date_str = now.strftime("%d.%m.%Y")
-    time_str = now.strftime("%H:%M")
-    return date_str, time_str
+    return now.strftime("%d.%m.%Y"), now.strftime("%H:%M")
 
 
-@st.fragment(run_every=900)
+@st.fragment(run_every=config.HEADER_REFRESH_S)
 def show_header() -> None:
-    """
-    Erstellt den Header im THI-Design (Dunkelblau #003366 + THI-Blau #005A9B)
-    mit Wetter, Uhrzeit, Datum und Standort.
-    """
+    """Erstellt den Header im THI-Design mit Wetter, Uhrzeit, Datum und Standort."""
     temp, weather_desc, icon = get_weather_data()
     date_str, time_str = get_date_and_time()
 
@@ -88,7 +78,7 @@ def show_header() -> None:
         f"""
         <div style="margin-bottom: 24px;">
             <div style="
-                background: #003366;
+                background: {config.THI_DUNKELBLAU};
                 border-radius: 12px 12px 0 0;
                 padding: 16px 24px;
                 display: flex;
@@ -98,26 +88,26 @@ def show_header() -> None:
                 gap: 12px;
             ">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <span style="font-size: 26px; color: #5EB3F0;">⚡</span>
+                    <span style="font-size: 26px; color: {config.THI_HELLBLAU};">⚡</span>
                     <div>
                         <div style="font-size: 17px; font-weight: 500; color: white; margin: 0;">PV Dashboard</div>
-                        <div style="font-size: 12px; color: #99B8D4; margin: 0;">THI · Ingolstadt</div>
+                        <div style="font-size: 12px; color: {config.THI_BLAUGRAU}; margin: 0;">THI · {config.STANDORT_NAME}</div>
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
                     <div style="text-align: right;">
-                        <div style="font-size: 12px; color: #99B8D4;">Aktuelles Wetter</div>
+                        <div style="font-size: 12px; color: {config.THI_BLAUGRAU};">Aktuelles Wetter</div>
                         <div style="font-size: 14px; color: white; font-weight: 500;">{icon} {weather_desc} · {temp} °C</div>
                     </div>
                     <div style="width: 1px; height: 32px; background: rgba(255,255,255,0.2);"></div>
                     <div style="text-align: right;">
-                        <div style="font-size: 12px; color: #99B8D4;">Datum</div>
+                        <div style="font-size: 12px; color: {config.THI_BLAUGRAU};">Datum</div>
                         <div style="font-size: 14px; color: white; font-weight: 500;">{date_str}</div>
                     </div>
                 </div>
             </div>
             <div style="
-                background: #005A9B;
+                background: {config.THI_BLAU};
                 border-radius: 0 0 12px 12px;
                 padding: 6px 24px;
                 display: flex;
@@ -125,9 +115,9 @@ def show_header() -> None:
                 gap: 20px;
                 flex-wrap: wrap;
             ">
-                <span style="font-size: 12px; font-weight: 500; color: #B8D4EE;">📍 Standort: Ingolstadt</span>
-                <span style="font-size: 12px; font-weight: 500; color: #B8D4EE;">🕒 {time_str} Uhr</span>
-                <span style="font-size: 12px; font-weight: 500; color: #B8D4EE;">🔄 Aktualisierung alle 15 Min.</span>
+                <span style="font-size: 12px; font-weight: 500; color: {config.THI_BLAUGRAU_HELL};">📍 Standort: {config.STANDORT_NAME}</span>
+                <span style="font-size: 12px; font-weight: 500; color: {config.THI_BLAUGRAU_HELL};">🕒 {time_str} Uhr</span>
+                <span style="font-size: 12px; font-weight: 500; color: {config.THI_BLAUGRAU_HELL};">🔄 Aktualisierung alle 15 Min.</span>
             </div>
         </div>
         """,
