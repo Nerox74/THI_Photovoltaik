@@ -1,39 +1,34 @@
-FROM python:3.11-slim
+FROM python:3.11-slim AS base
 LABEL authors="nilsschaftlein"
 
-#Umgebungsvariabelen
-#prints werden sofort angezeigt nicht verzögert
 ENV PYTHONUNBUFFERED=1
-#Führe den Code aus --° nicht in Pycahche speichern
 ENV PYTHONDONTWRITEBYTECODE=1
-
 
 WORKDIR /app
 
-#-m Erstellt im Home-Direcotry benutzer für homme/app
-#chown ändert besitzer einer Datei -R Ändere den Besitzer des Ordners
-RUN useradd -m app && chown -R app:app /app
+RUN useradd -m app
 
+# Dependencies zuerst (Layer-Caching)
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-
+# Code danach
 COPY --chown=app:app ./src ./src
 
-#wird nicht mehr als root ausgeführt sondern als app
+# Beschreibbare Verzeichnisse für Nicht-Root-User
+ENV STREAMLIT_HOME=/app/.streamlit
+RUN mkdir -p /app/.streamlit /app/data && chown -R app:app /app
+
 USER app
 
+# ── Dashboard ────────────────────────────────────────────────
+FROM base AS dashboard
 EXPOSE 8501
-
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')" || exit 1
 ENTRYPOINT ["streamlit", "run"]
-
 CMD ["src/main.py", "--server.port=8501", "--server.address=0.0.0.0"]
 
-
-
-
-
-
-
-
-
+# ── Collector ────────────────────────────────────────────────
+FROM base AS collector
+ENTRYPOINT ["python", "-u", "src/data_module.py"]

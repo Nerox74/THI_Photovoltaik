@@ -47,6 +47,10 @@ def _show_amortisierung(amortisierung: float) -> None:
 def show_kpis(df: pd.DataFrame) -> None:
     df_kwh = formulas.umrechnung_in_kwh(df)
 
+    # Gibt es überhaupt eine Messung von heute? (Sonst zeigen wir "—" statt 0)
+    maske_heute = df_kwh["collected_at"] >= pd.Timestamp.now(tz="UTC").normalize()
+    hat_daten_heute = bool(maske_heute.any())
+
     kwh_heute     = _summe_kwh(df_kwh, "kwh_erzeugt", "Tag")
     kwh_woche     = _summe_kwh(df_kwh, "kwh_erzeugt", "Woche")
     auslastung    = min(100.0, kwh_heute / config.MAX_TAGESERZEUGUNG_KWH * 100)
@@ -55,10 +59,26 @@ def show_kpis(df: pd.DataFrame) -> None:
     amortisierung = min(100.0, eingespart / config.ANSCHAFFUNGSKOSTEN_PV_ANLAGE * 100)
     ersparnis_tag = kwh_heute * config.STROMPREIS
 
+    # Anzeige-Strings: bei fehlenden Tagesdaten "—" statt irreführender Null
+    if hat_daten_heute:
+        txt_heute      = f"{kwh_heute:.1f} kWh"
+        txt_heute_sub  = "Stand jetzt"
+        txt_ersparnis  = f"{ersparnis_tag:.2f} €"
+        txt_ersp_sub   = f"{kwh_heute:.1f} kWh × {config.STROMPREIS} €"
+        txt_auslastung = f"{auslastung:.1f} %"
+        breite_auslast = auslastung
+    else:
+        txt_heute      = "—"
+        txt_heute_sub  = "keine Daten heute"
+        txt_ersparnis  = "—"
+        txt_ersp_sub   = "keine Daten heute"
+        txt_auslastung = "—"
+        breite_auslast = 0.0
+
     logger.debug(
-        "KPIs: heute=%.1f kWh, Woche=%.1f kWh, Ersparnis=%.2f €, "
+        "KPIs: heute=%.1f kWh (Daten heute: %s), Woche=%.1f kWh, Ersparnis=%.2f €, "
         "Auslastung=%.1f %%, Amortisierung=%.1f %%",
-        kwh_heute, kwh_woche, ersparnis_tag, auslastung, amortisierung,
+        kwh_heute, hat_daten_heute, kwh_woche, ersparnis_tag, auslastung, amortisierung,
     )
 
     col1, col2, col3 = st.columns(3)
@@ -67,8 +87,8 @@ def show_kpis(df: pd.DataFrame) -> None:
         st.markdown(
             f'<div style="background:{config.KPI_BG}; border-radius:{config.KPI_RADIUS}; padding:14px 18px;">'
             f'<div style="font-size:11px; color:{config.TEXT_GEDIMMT}; margin-bottom:6px;">⚡ Heute erzeugt</div>'
-            f'<div style="font-size:26px; font-weight:500; color:white;">{kwh_heute:.1f} kWh</div>'
-            f'<div style="font-size:11px; color:{config.TEXT_SCHWACH}; margin-top:4px;">Stand jetzt</div>'
+            f'<div style="font-size:26px; font-weight:500; color:white;">{txt_heute}</div>'
+            f'<div style="font-size:11px; color:{config.TEXT_SCHWACH}; margin-top:4px;">{txt_heute_sub}</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -77,8 +97,8 @@ def show_kpis(df: pd.DataFrame) -> None:
         st.markdown(
             f'<div style="background:{config.KPI_BG}; border-radius:{config.KPI_RADIUS}; padding:14px 18px;">'
             f'<div style="font-size:11px; color:{config.TEXT_GEDIMMT}; margin-bottom:6px;">💰 Ersparnis (Tag)</div>'
-            f'<div style="font-size:26px; font-weight:500; color:white;">{ersparnis_tag:.2f} €</div>'
-            f'<div style="font-size:11px; color:{config.TEXT_SCHWACH}; margin-top:4px;">{kwh_heute:.1f} kWh × {config.STROMPREIS} €</div>'
+            f'<div style="font-size:26px; font-weight:500; color:white;">{txt_ersparnis}</div>'
+            f'<div style="font-size:11px; color:{config.TEXT_SCHWACH}; margin-top:4px;">{txt_ersp_sub}</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -87,9 +107,9 @@ def show_kpis(df: pd.DataFrame) -> None:
         st.markdown(
             f'<div style="background:{config.KPI_BG}; border-radius:{config.KPI_RADIUS}; padding:14px 18px;">'
             f'<div style="font-size:11px; color:{config.TEXT_GEDIMMT}; margin-bottom:6px;">📊 Auslastung heute</div>'
-            f'<div style="font-size:26px; font-weight:500; color:white;">{auslastung:.1f} %</div>'
+            f'<div style="font-size:26px; font-weight:500; color:white;">{txt_auslastung}</div>'
             f'<div style="height:6px; background:rgba(255,255,255,0.1); border-radius:3px; margin-top:10px;">'
-            f'<div style="height:6px; width:{auslastung:.1f}%; background:{config.THI_BLAU}; border-radius:3px;"></div>'
+            f'<div style="height:6px; width:{breite_auslast:.1f}%; background:{config.THI_BLAU}; border-radius:3px;"></div>'
             f'</div></div>',
             unsafe_allow_html=True,
         )

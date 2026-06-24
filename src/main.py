@@ -19,7 +19,7 @@ from components.formulas import differenz_erzeugt_verbraucht
 from components.header import show_header
 from components.kpis import show_kpis
 
-CSV_PATH = Path(__file__).resolve().parent / "cleaned_data.csv"
+CSV_PATH = config.CSV_PATH
 
 setup_logging("projekt.log")
 logger = logging.getLogger(__name__)

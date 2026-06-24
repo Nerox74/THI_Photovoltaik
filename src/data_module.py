@@ -23,7 +23,7 @@ load_dotenv(dotenv_path=env_path)
 URL = os.environ.get("JUPYTER_HUB_URL")
 API_KEY = os.environ.get("API_KEY")
 
-CSV_PATH = Path(__file__).resolve().parent / "cleaned_data.csv"
+CSV_PATH = config.CSV_PATH
 
 # Unterdrückt die InsecureRequestWarning (wir arbeiten mit verify=False)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

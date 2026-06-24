@@ -17,3 +17,4 @@ config.py
 .idea/workspace.xml
 .env
 *.csv
+.cache.sqlite
