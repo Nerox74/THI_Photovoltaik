@@ -27,10 +27,11 @@ REQUEST_TIMEOUT = 30
 # ─────────────────────────────────────────────────────────────────────────────
 # BERECHNUNG (formulas.py / kpis.py)
 # ─────────────────────────────────────────────────────────────────────────────
-MAX_LUECKE_H = 0.5
+MAX_LUECKE_H = 1.5   # Intervalle > 1,5 h gelten als Datenlücke (Collector war aus)
 STROMPREIS = 0.39
 ANSCHAFFUNGSKOSTEN_PV_ANLAGE = 15_000.0
 MAX_TAGESERZEUGUNG_KWH = 50.0
+CO2_FAKTOR_KG_PRO_KWH = 0.38   # Deutscher Strommix 2024 (ca. 380 g CO₂/kWh)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STANDORT & WETTER (header.py)

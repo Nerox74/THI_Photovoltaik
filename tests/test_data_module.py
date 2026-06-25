@@ -1,7 +1,7 @@
 """Unittests für data_module.py."""
 
 import data_module
-from data_module import daten_bereinigen, zeile_speichern
+from data_module import daten_bereinigen, daten_abrufen
 
 # Realistisches Beispiel direkt vom Server
 BEISPIEL_ROHDATEN = {
@@ -32,12 +32,15 @@ BEISPIEL_ROHDATEN = {
 }
 
 
-# ── daten_bereinigen ───────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# daten_bereinigen
+# ─────────────────────────────────────────────────────────────────────────────
 
 def test_daten_bereinigen_pv_erzeugung_wird_summiert_und_in_kw_umgerechnet():
-    # 139447.55 + 11087.20 + 47684.48 = 198219.23 W → 198.22 kW
+    """Alle 'generation'-Werte werden summiert und von W → kW umgerechnet."""
     zeile = daten_bereinigen(BEISPIEL_ROHDATEN)
-    assert zeile["pv_erzeugung_kw"] == round((139447.546875 + 11087.197265625 + 47684.484375) / 1000, 2)
+    erwartet = round((139447.546875 + 11087.197265625 + 47684.484375) / 1000, 2)
+    assert zeile["pv_erzeugung_kw"] == erwartet
 
 
 def test_daten_bereinigen_netz_wert_wird_in_kw_umgerechnet():
@@ -50,7 +53,7 @@ def test_daten_bereinigen_uhrzeit_hat_format_hh_mm():
     assert zeile["uhrzeit"] == "09:39"
 
 
-def test_daten_bereinigen_hat_alle_felder():
+def test_daten_bereinigen_hat_alle_pflichtfelder():
     zeile = daten_bereinigen(BEISPIEL_ROHDATEN)
     assert set(zeile.keys()) == {"collected_at", "uhrzeit", "pv_erzeugung_kw", "netz_wert_kw"}
 
@@ -60,72 +63,63 @@ def test_daten_bereinigen_gibt_dict_zurueck():
     assert isinstance(zeile, dict)
 
 
-# ── zeile_speichern ────────────────────────────────────────────────────────────
-
-def test_zeile_speichern_erstellt_datei(tmp_path, monkeypatch):
-    # CSV_PATH im Modul auf einen temporären Pfad umleiten
-    monkeypatch.setattr(data_module, "CSV_PATH", tmp_path / "test.csv")
-
-    zeile = {
-        "collected_at": "2026-06-19T09:39:23+02:00",
-        "uhrzeit": "09:39",
-        "pv_erzeugung_kw": 198.22,
-        "netz_wert_kw": 309.97,
+def test_daten_bereinigen_nur_consumption_typen_in_netz():
+    """Nur Einträge mit type='consumption' gehen in netz_wert_kw."""
+    rohdaten = {
+        "collected_at": "2026-06-19T10:00:00+00:00",
+        "data": [
+            {"type": "consumption", "value": 2000.0},
+            {"type": "generation",  "value": 1000.0},
+        ],
     }
-    data_module.zeile_speichern(zeile)
-    assert (tmp_path / "test.csv").exists()
+    zeile = daten_bereinigen(rohdaten)
+    assert zeile["netz_wert_kw"] == 2.0   # nur 2000 W → 2.0 kW
 
 
-def test_zeile_speichern_schreibt_header_in_neue_datei(tmp_path, monkeypatch):
-    monkeypatch.setattr(data_module, "CSV_PATH", tmp_path / "test.csv")
-
-    zeile = {
-        "collected_at": "2026-06-19T09:39:23+02:00",
-        "uhrzeit": "09:39",
-        "pv_erzeugung_kw": 198.22,
-        "netz_wert_kw": 309.97,
+def test_daten_bereinigen_ohne_generation_ergibt_null_kw():
+    """Wenn keine 'generation'-Einträge vorhanden sind, muss pv_erzeugung_kw = 0 sein."""
+    rohdaten = {
+        "collected_at": "2026-06-19T10:00:00+00:00",
+        "data": [{"type": "consumption", "value": 500.0}],
     }
-    data_module.zeile_speichern(zeile)
-    inhalt = (tmp_path / "test.csv").read_text()
-    # Header muss in der ersten Zeile stehen
-    assert inhalt.splitlines()[0] == "collected_at,uhrzeit,pv_erzeugung_kw,netz_wert_kw"
+    zeile = daten_bereinigen(rohdaten)
+    assert zeile["pv_erzeugung_kw"] == 0.0
 
 
-def test_zeile_speichern_haengt_an_ohne_doppelten_header(tmp_path, monkeypatch):
-    monkeypatch.setattr(data_module, "CSV_PATH", tmp_path / "test.csv")
-
-    zeile = {
-        "collected_at": "2026-06-19T09:39:23+02:00",
-        "uhrzeit": "09:39",
-        "pv_erzeugung_kw": 198.22,
-        "netz_wert_kw": 309.97,
-    }
-    data_module.zeile_speichern(zeile)
-    data_module.zeile_speichern(zeile)  # zweites Mal speichern
-
-    zeilen = (tmp_path / "test.csv").read_text().splitlines()
-    # 1 Headerzeile + 2 Datenzeilen = 3 Zeilen, KEIN doppelter Header
-    assert len(zeilen) == 3
-    assert zeilen[0] == "collected_at,uhrzeit,pv_erzeugung_kw,netz_wert_kw"
-
-
-# ── daten_abrufen (mit Mock, kein echter Server nötig) ────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# daten_abrufen (mit Mock, kein echter Server nötig)
+# ─────────────────────────────────────────────────────────────────────────────
 
 class FakeResponse:
     """Simuliert eine echte requests-Antwort."""
     def raise_for_status(self):
         pass
+
     def json(self):
         return BEISPIEL_ROHDATEN
 
 
 def test_daten_abrufen_gibt_json_zurueck(monkeypatch):
     monkeypatch.setattr(data_module.requests, "get", lambda *a, **k: FakeResponse())
-    ergebnis = data_module.daten_abrufen()
+    ergebnis = daten_abrufen()
     assert ergebnis == BEISPIEL_ROHDATEN
 
 
 def test_daten_abrufen_gibt_dict_zurueck(monkeypatch):
     monkeypatch.setattr(data_module.requests, "get", lambda *a, **k: FakeResponse())
-    ergebnis = data_module.daten_abrufen()
+    ergebnis = daten_abrufen()
     assert isinstance(ergebnis, dict)
+
+
+def test_daten_abrufen_wirft_exception_bei_http_fehler(monkeypatch):
+    """Bei einem HTTP-Fehler (raise_for_status) muss eine Exception weitergegeben werden."""
+    class BadResponse:
+        def raise_for_status(self):
+            raise Exception("HTTP 500")
+        def json(self):
+            return {}
+
+    monkeypatch.setattr(data_module.requests, "get", lambda *a, **k: BadResponse())
+    import pytest
+    with pytest.raises(Exception):
+        daten_abrufen()

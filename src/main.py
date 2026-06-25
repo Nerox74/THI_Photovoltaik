@@ -4,7 +4,6 @@ und verwendet, um das Dashboard über Streamlit zu erzeugen."""
 import logging
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import streamlit as st
 
 import config
@@ -19,23 +18,17 @@ from components.header import show_header
 from components.kpis import show_kpis
 from components.storage import DataStorage
 
-setup_logging("projekt.log")
+# setup_logging nur einmal aufrufen – nicht bei jedem Streamlit-Rerun
+if not logging.getLogger().handlers:
+    setup_logging(config.LOG_FILE)
+
 logger = logging.getLogger(__name__)
 logger.info("Die App wurde gestartet")
 
 
-def streamlit_app() -> None:
-    """Baut die Streamlit-App aus den einzelnen Komponenten zusammen."""
-    st.set_page_config(
-        page_title="PV Dashboard – THI",
-        page_icon="☀️",
-        layout="wide",
-    )
-
-    # ── Header ──────────────────────────────────────────
-    show_header()
-
-    # ── Daten laden ─────────────────────────────────────
+@st.fragment(run_every=60)
+def show_dashboard_content() -> None:
+    """Lädt Daten und rendert KPIs + alle Charts als Einheit (jede Minute neu)."""
     db = DataStorage()
     df = db.load_raw_df()
 
@@ -48,29 +41,44 @@ def streamlit_app() -> None:
 
     data = differenz_erzeugt_verbraucht(df)
 
-    # ── KPIs ────────────────────────────────────────────
-    # Übergeben der Gesamt-kWh für die Amortisierung (überlebt das Prunen der Rohdaten)
+    # ── KPIs ────────────────────────────────────────────────────────────────
     show_kpis(df, db.gesamt_kwh_erzeugt())
 
     st.divider()
 
-    # ── Zeile 1: Balken + Kurve nebeneinander ───────────
+    # ── Alle Figuren zuerst berechnen, dann gemeinsam anzeigen ──────────────
+    fig_balken = create_chart_balkendiagramm(df)
+    fig_kurve = create_chart_kurvendiagramm(df)
+    fig_kalender = draw_calendar_3monate(data, config.UNIT)
+
     col_l, col_r = st.columns(2)
     with col_l:
-        fig_balken = create_chart_balkendiagramm(df)
         st.pyplot(fig_balken)
-        plt.close(fig_balken)
     with col_r:
-        fig_kurve = create_chart_kurvendiagramm(df)
         st.pyplot(fig_kurve)
-        plt.close(fig_kurve)
+
+    plt.close(fig_balken)
+    plt.close(fig_kurve)
 
     st.divider()
 
-    # ── Zeile 2: 3-Monats-Kalender volle Breite ─────────
-    fig_kalender = draw_calendar_3monate(data, config.UNIT)
     st.pyplot(fig_kalender)
     plt.close(fig_kalender)
+
+
+def streamlit_app() -> None:
+    """Baut die Streamlit-App aus den einzelnen Komponenten zusammen."""
+    st.set_page_config(
+        page_title="PV Dashboard – THI",
+        page_icon="☀️",
+        layout="wide",
+    )
+
+    # ── Header (refresht jede Minute: Wetter + Uhrzeit) ─────────────────────
+    show_header()
+
+    # ── Daten, KPIs und Charts (alle zusammen als Fragment) ─────────────────
+    show_dashboard_content()
 
 
 if __name__ == "__main__":

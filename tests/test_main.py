@@ -1,30 +1,35 @@
 """Unittests für main.py.
+
 streamlit_app() selbst ist nicht testbar ohne laufende Streamlit-Session,
-daher prüfen wir den Modulaufbau und die Konstanten."""
+daher prüfen wir den Modulaufbau, Importe und aufrufbare Funktionen.
+"""
 
-from pathlib import Path
-
-
-def test_csv_path_ist_ein_path_objekt():
-    import main
-    assert isinstance(main.CSV_PATH, Path)
+import main
 
 
 def test_streamlit_app_ist_aufrufbar():
-    import main
-    # Prüft, dass streamlit_app als Funktion existiert
+    """streamlit_app muss als Funktion existieren und aufrufbar sein."""
     assert callable(main.streamlit_app)
 
 
 def test_streamlit_app_hat_docstring():
-    import main
     assert main.streamlit_app.__doc__ is not None
     assert len(main.streamlit_app.__doc__) > 0
 
 
-def test_year_und_unit_werden_aus_charts_importiert():
-    # YEAR und UNIT werden in main aus charts importiert und müssen vorhanden sein
-    from components.charts import UNIT, YEAR
-    assert isinstance(YEAR, int)
-    assert isinstance(UNIT, str)
-    assert UNIT == "kWh"
+def test_show_dashboard_content_ist_aufrufbar():
+    """show_dashboard_content muss als Funktion existieren."""
+    assert callable(main.show_dashboard_content)
+
+
+def test_config_wird_importiert():
+    """config muss im main-Modul verfügbar sein."""
+    import config
+    assert config.UNIT == "kWh"
+    assert isinstance(config.HEADER_REFRESH_S, int)
+
+
+def test_header_refresh_ist_eine_minute():
+    """Nach unserer Änderung muss der Refresh-Intervall 60 Sekunden betragen."""
+    import config
+    assert config.HEADER_REFRESH_S == 60
