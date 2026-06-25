@@ -17,3 +17,7 @@ __pycache__/
 .env
 *.csv
 .cache.sqlite
+
+*.db
+*.db-wal
+*.db-shm

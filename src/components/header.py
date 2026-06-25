@@ -8,7 +8,7 @@ import requests_cache
 import streamlit as st
 from retry_requests import retry
 
-from THI_Photovoltaik import config
+import config
 
 # Open-Meteo-Client mit Cache und Retry
 cache_session = requests_cache.CachedSession(".cache", expire_after=3600)

@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.colors import TwoSlopeNorm
 
-from THI_Photovoltaik import config
+import config
 from components.formulas import differenz_erzeugt_verbraucht, umrechnung_in_kwh
 
 logger = logging.getLogger(__name__)

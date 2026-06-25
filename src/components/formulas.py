@@ -2,10 +2,8 @@
 
 # Imports
 import logging
-
 import pandas as pd
-
-from THI_Photovoltaik import config
+import config
 
 logger = logging.getLogger(__name__)
 
