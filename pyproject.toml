@@ -2,39 +2,11 @@
 name = "thi-photovoltaik"
 version = "0.1.0"
 description = "Streamlit-Dashboard zur Visualisierung von PV-Anlagen-Daten"
-authors = [
-    {name = "Nils Schaeftlein", email = "schaeftlein.nils@gmail.com"}
-]
-readme = "README.md"
 requires-python = ">=3.11"
-dependencies = [
-    "streamlit",
-    "pandas",
-    "numpy",
-    "matplotlib",
-    "requests",
-    "urllib3",
-    "python-dotenv",
-    "openmeteo-requests",
-    "requests-cache",
-    "retry-requests",
-]
-
-[tool.poetry]
-package-mode = false
-
-[tool.poetry.group.dev.dependencies]
-ruff = "*"
-black = "*"
-pytest = "*"
-pre-commit = "*"
 
 [tool.ruff]
 line-length = 90
 exclude = [".venv", "venv"]
-
-[tool.ruff.lint]
-select = ["E", "F", "I"]   # I = Import-Sortierung (macht ruff sonst NICHT automatisch)
 
 [tool.black]
 line-length = 90
@@ -42,7 +14,3 @@ line-length = 90
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"

@@ -8,8 +8,7 @@ __pycache__/
 .pytest_cache
 # Das ist für den Mac
 .DS_Store
-# Das ist für Config & Secrets
-config.py
+
 # Das ist für die Logs
 *.log
 # Das ist für die IDE
