@@ -175,8 +175,8 @@ def create_chart_kurvendiagramm(df: pd.DataFrame):
     ax.fill_between(x, stunden["kwh_verbraucht"], alpha=0.12, color=config.FARBE_DEFIZIT)
 
     for xy, label, color in [
-        ((idx_min_erz, min_erz),  f"Min {min_erz:.2f}",  config.FARBE_UEBERSCHUSS),
-        ((idx_max_erz, max_erz),  f"Max {max_erz:.2f}",  config.FARBE_UEBERSCHUSS),
+        ((idx_min_erz, min_erz),  f"Min {min_erz:.2f}", config.FARBE_UEBERSCHUSS),
+        ((idx_max_erz, max_erz),  f"Max {max_erz:.2f}", config.FARBE_UEBERSCHUSS),
         ((idx_min_verb, min_verb), f"Min {min_verb:.2f}", config.FARBE_DEFIZIT),
         ((idx_max_verb, max_verb), f"Max {max_verb:.2f}", config.FARBE_DEFIZIT),
     ]:

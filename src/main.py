@@ -2,7 +2,6 @@
 und verwendet, um das Dashboard über Streamlit zu erzeugen."""
 
 import logging
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
