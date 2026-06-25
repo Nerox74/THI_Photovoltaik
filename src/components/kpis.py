@@ -6,7 +6,7 @@ import math
 import pandas as pd
 import streamlit as st
 
-from THI_Photovoltaik import config
+import config
 from components import formulas
 
 logger = logging.getLogger(__name__)
@@ -44,7 +44,16 @@ def _show_amortisierung(amortisierung: float) -> None:
     )
 
 
-def show_kpis(df: pd.DataFrame) -> None:
+def show_kpis(df: pd.DataFrame, kwh_gesamt_alltime: float | None = None) -> None:
+    """Zeigt die KPI-Kacheln: Heute, Ersparnis, Auslastung, Amortisierung.
+
+    Args:
+        df: Rohdaten-DataFrame (Rohwerte aus der Datenbank).
+        kwh_gesamt_alltime: Gesamte kWh über die komplette Historie (aus DataStorage.gesamt_kwh_erzeugt).
+                           Falls None, wird die Summe aus den aktuellen Rohdaten berechnet.
+                           Wichtig: Damit die Amortisierung nach dem Prunen nicht schrumpft,
+                           sollte dieser Wert aus der Datenbank kommen.
+    """
     df_kwh = formulas.umrechnung_in_kwh(df)
 
     # Gibt es überhaupt eine Messung von heute? (Sonst zeigen wir "—" statt 0)
@@ -54,7 +63,15 @@ def show_kpis(df: pd.DataFrame) -> None:
     kwh_heute     = _summe_kwh(df_kwh, "kwh_erzeugt", "Tag")
     kwh_woche     = _summe_kwh(df_kwh, "kwh_erzeugt", "Woche")
     auslastung    = min(100.0, kwh_heute / config.MAX_TAGESERZEUGUNG_KWH * 100)
-    kwh_gesamt    = float(df_kwh["kwh_erzeugt"].sum())
+
+    # Fallback: Falls kwh_gesamt_alltime nicht übergeben wurde, rechne aus lokalen Daten.
+    # Aber wichtig: Normalerweise sollte der Wert von DataStorage kommen!
+    kwh_gesamt = (
+        kwh_gesamt_alltime
+        if kwh_gesamt_alltime is not None
+        else float(df_kwh["kwh_erzeugt"].sum())
+    )
+
     eingespart    = kwh_gesamt * config.STROMPREIS
     amortisierung = min(100.0, eingespart / config.ANSCHAFFUNGSKOSTEN_PV_ANLAGE * 100)
     ersparnis_tag = kwh_heute * config.STROMPREIS

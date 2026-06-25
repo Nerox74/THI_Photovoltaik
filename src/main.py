@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-from THI_Photovoltaik import config
+import config
 from logging_setup import setup_logging
 from components.charts import (
     draw_calendar_3monate,
@@ -17,8 +17,7 @@ from components.charts import (
 from components.formulas import differenz_erzeugt_verbraucht
 from components.header import show_header
 from components.kpis import show_kpis
-
-CSV_PATH = config.CSV_PATH
+from components.storage import DataStorage
 
 setup_logging("projekt.log")
 logger = logging.getLogger(__name__)
@@ -37,18 +36,21 @@ def streamlit_app() -> None:
     show_header()
 
     # ── Daten laden ─────────────────────────────────────
-    try:
-        df = pd.read_csv(CSV_PATH)
-        logger.info("CSV geladen: %d Zeilen", len(df))
-    except FileNotFoundError:
-        logger.error("cleaned_data.csv nicht gefunden unter %s", CSV_PATH)
+    db = DataStorage()
+    df = db.load_raw_df()
+
+    if df.empty:
+        logger.error("Keine Rohdaten in der Datenbank")
         st.error("Keine Daten vorhanden – läuft das Sammel-Skript?")
         st.stop()
+
+    logger.info("Datenbank geladen: %d Rohzeilen", len(df))
 
     data = differenz_erzeugt_verbraucht(df)
 
     # ── KPIs ────────────────────────────────────────────
-    show_kpis(df)
+    # Übergeben der Gesamt-kWh für die Amortisierung (überlebt das Prunen der Rohdaten)
+    show_kpis(df, db.gesamt_kwh_erzeugt())
 
     st.divider()
 

@@ -1,7 +1,6 @@
 """Stellt eine Verbindung zu Prometheus her, holt die Rohdaten, bereinigt sie und
-hängt die bereinigten Zeilen an cleaned_data.csv an."""
+schreibt die bereinigten Zeilen in die SQLite-Datenbank."""
 
-import csv
 import logging
 import os
 import time
@@ -12,7 +11,8 @@ import requests
 import urllib3
 from dotenv import load_dotenv
 
-from THI_Photovoltaik import config
+import config
+from components.storage import DataStorage
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +22,6 @@ load_dotenv(dotenv_path=env_path)
 
 URL = os.environ.get("JUPYTER_HUB_URL")
 API_KEY = os.environ.get("API_KEY")
-
-CSV_PATH = config.CSV_PATH
 
 # Unterdrückt die InsecureRequestWarning (wir arbeiten mit verify=False)
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -61,39 +59,29 @@ def daten_bereinigen(data: dict) -> dict:
     }
 
 
-def zeile_speichern(zeile: dict) -> None:
-    """Hängt eine bereinigte Zeile an cleaned_data.csv an (Header einmalig)."""
-    feldnamen = ["collected_at", "uhrzeit", "pv_erzeugung_kw", "netz_wert_kw"]
-    datei_existiert = CSV_PATH.exists() and CSV_PATH.stat().st_size > 0
-
-    with open(CSV_PATH, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=feldnamen)
-        if not datei_existiert:
-            writer.writeheader()
-        writer.writerow(zeile)
-
-
 def automatische_abfrage() -> None:
-    """Fragt den Server zyklisch ab und schreibt neue Daten in cleaned_data.csv.
+    """Fragt den Server zyklisch ab und schreibt neue Daten in die Datenbank.
 
     Bei unveränderten oder fehlerhaften Antworten wird die Wartezeit verdoppelt
     (exponentielles Backoff, gedeckelt durch config.MAX_WAIT_TIME).
+
+    Einmal pro Stunde: Tagesbilanz auffrischen + alte Rohdaten löschen (Retention).
     """
+    db = DataStorage()
     logger.info(
         "Starte Abfrage: URL=%s, Intervall=%ds, Max-Wartezeit=%ds",
         URL, config.INTERVALL_SEKUNDEN, config.MAX_WAIT_TIME,
     )
-    letzter_zeitstempel = None
     aktuelle_wartezeit = config.INTERVALL_SEKUNDEN
+    letzte_wartung = time.monotonic()
 
     while True:
         try:
             rohdaten = daten_abrufen()
             zeile = daten_bereinigen(rohdaten)
 
-            if zeile["collected_at"] != letzter_zeitstempel:
-                zeile_speichern(zeile)
-                letzter_zeitstempel = zeile["collected_at"]
+            # insert_row gibt True zurück, wenn die Zeile neu war (PRIMARY KEY nicht doppelt)
+            if db.insert_row(zeile):
                 logger.info(
                     "[%s] gespeichert -> PV: %s kW | Netz: %s kW",
                     zeile["uhrzeit"], zeile["pv_erzeugung_kw"], zeile["netz_wert_kw"],
@@ -105,6 +93,11 @@ def automatische_abfrage() -> None:
                     "[%s] keine neuen Daten – übersprungen. Nächster Versuch in %.1f Min.",
                     zeile["uhrzeit"], aktuelle_wartezeit / 60,
                 )
+
+            # Einmal pro Stunde: Tagesbilanz auffrischen + alte Rohdaten löschen
+            if time.monotonic() - letzte_wartung >= 3600:
+                db.prune()  # rollt erst auf, dann Retention (90 Tage)
+                letzte_wartung = time.monotonic()
 
         except Exception as fehler:
             logger.error("Fehler beim Abruf (Server evtl. abgestürzt): %s", fehler)
