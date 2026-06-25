@@ -1,2 +1,0 @@
-
-""" Beispiel Example Datei, wird mit ins Gihtub repository hochgeladen"""

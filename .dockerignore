@@ -1,28 +1,11 @@
-
-# Git
-.github
-.gitignore
-
-# Python-Müll
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.pytest_cache/
-.htmlcov/
-
-# Virtuelle Umgebungen
-venv/
-.venv/
-env/
 .env
-
-# Sensible Daten (WICHTIG!)
-config.py
+.git
+.venv
+venv
+__pycache__
+*.pyc
 *.log
-logs/
-
-# Docker/IDE-spezifisches
-.idea/
-.vscode/
-Dockerhtml
+.cache.sqlite
+.idea
+.DS_Store
+tests
