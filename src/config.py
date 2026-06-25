@@ -40,7 +40,7 @@ STANDORT_LAT = 48.76361
 STANDORT_LON = 11.42611
 WETTER_CACHE_SEKUNDEN = 3600
 WETTER_RETRIES = 5
-HEADER_REFRESH_S = 900
+HEADER_REFRESH_S = 60
 
 # ─────────────────────────────────────────────────────────────────────────────
 # THI CORPORATE COLORS (offizielle Hausfarben der TH Ingolstadt)

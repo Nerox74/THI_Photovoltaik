@@ -117,7 +117,7 @@ def show_header() -> None:
             ">
                 <span style="font-size: 12px; font-weight: 500; color: {config.THI_BLAUGRAU_HELL};">📍 Standort: {config.STANDORT_NAME}</span>
                 <span style="font-size: 12px; font-weight: 500; color: {config.THI_BLAUGRAU_HELL};">🕒 {time_str} Uhr</span>
-                <span style="font-size: 12px; font-weight: 500; color: {config.THI_BLAUGRAU_HELL};">🔄 Aktualisierung alle 15 Min.</span>
+                <span style="font-size: 12px; font-weight: 500; color: {config.THI_BLAUGRAU_HELL};">🔄 Aktualisierung alle 60 Sekunden.</span>
             </div>
         </div>
         """,
