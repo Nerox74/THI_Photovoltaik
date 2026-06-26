@@ -1,49 +1,47 @@
 name: Python CI
 
-# Definiert, wann die Pipeline laufen soll
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "**" ]          # läuft auf JEDEM Branch
   pull_request:
-    branches: [ "main" ]
+    branches: [ "**" ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    # Hier kannst du verschiedene Python-Versionen gleichzeitig testen lassen
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
 
     steps:
-    # 1. Code aus dem Repository auschecken
-    - name: Code auschecken
-      uses: actions/checkout@v4
+      - name: Code auschecken
+        uses: actions/checkout@v4
 
-    # 2. Python Umgebung einrichten
-    - name: Python ${{ matrix.python-version }} einrichten
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: 'pip' # Aktiviert Caching für schnellere Builds
+      - name: Python ${{ matrix.python-version }} einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
 
-    # 3. Abhängigkeiten installieren
-    - name: Abhängigkeiten installieren
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Abhängigkeiten installieren
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black pytest          # Tools explizit – nicht dem requirements.txt-Zufall überlassen
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # 4. Code-Stil überprüfen (Linting)
-    - name: Linting mit ruff
-      run: |
-        ruff check .
-    - name: Format-Check mit black
-      run: |
-        black --check .
+      - name: Linting mit ruff
+        run: ruff check .
 
-    # 5. Tests ausführen
-    - name: Tests mit pytest ausführen
-      run: |
-        pytest
+      - name: Format-Check mit black
+        run: black --check .
+
+      - name: Tests mit pytest ausführen
+        run: |
+          pytest
+          # Exit-Code 5 = "keine Tests gefunden" wird NICHT als Fehler gewertet,
+          # solange du noch keine Tests hast. Echte Test-Fehler bleiben rot.
+          if [ $? -eq 5 ]; then
+            echo "Noch keine Tests vorhanden – überspringe."
+            exit 0
+          fi
