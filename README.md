@@ -180,8 +180,7 @@ Alle technischen Parameter (keine Secrets) sind in `src/config.py` gebündelt:
 
 ---
 
-## Hinweise
+## Aufgabenverteilung
 
-- Der Collector verwendet `verify=False` für HTTPS, da das JupyterHub-Zertifikat selbstsigniert ist.
-- Wetterdaten kommen von [Open-Meteo](https://open-meteo.com/) (kostenlos, kein API-Key nötig).
-- Logs werden in `projekt.log` gespeichert (rotierend, max. 10 MB, 5 Archive).
+
+
