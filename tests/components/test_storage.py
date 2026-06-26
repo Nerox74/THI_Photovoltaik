@@ -1,7 +1,7 @@
 """Unittests für components/storage.py (DataStorage)."""
 
-import pytest
 import pandas as pd
+import pytest
 
 from components.storage import DataStorage
 
@@ -29,6 +29,7 @@ ZEILE_B = {
 # insert_row
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_insert_row_gibt_true_bei_neuer_zeile(db):
     assert db.insert_row(ZEILE_A) is True
 
@@ -54,6 +55,7 @@ def test_insert_row_mehrere_zeilen(db):
 # ─────────────────────────────────────────────────────────────────────────────
 # load_raw_df
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_load_raw_df_leere_db_gibt_leeren_df(db):
     df = db.load_raw_df()
@@ -81,6 +83,7 @@ def test_load_raw_df_ist_nach_zeitstempel_sortiert(db):
 # insert_many
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_insert_many_fuegt_alle_ein(db):
     neu = db.insert_many([ZEILE_A, ZEILE_B])
     assert neu == 2
@@ -97,6 +100,7 @@ def test_insert_many_ignoriert_duplikate(db):
 # ─────────────────────────────────────────────────────────────────────────────
 # rollup_tagesbilanz & gesamt_kwh_erzeugt
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_gesamt_kwh_erzeugt_null_bei_leerer_db(db):
     assert db.gesamt_kwh_erzeugt() == 0.0
@@ -121,10 +125,11 @@ def test_gesamt_kwh_erzeugt_nach_rollup(db):
 # prune
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_prune_loescht_rohzeilen(db):
     db.insert_row(ZEILE_A)
     db.insert_row(ZEILE_B)
-    geloescht = db.prune(tage=0)   # 0 Tage → alles weg
+    geloescht = db.prune(tage=0)  # 0 Tage → alles weg
     assert geloescht == 2
     assert db.load_raw_df().empty
 

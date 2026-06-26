@@ -25,6 +25,7 @@ def test_show_dashboard_content_ist_aufrufbar():
 def test_config_wird_importiert():
     """config muss im main-Modul verfügbar sein."""
     import config
+
     assert config.UNIT == "kWh"
     assert isinstance(config.HEADER_REFRESH_S, int)
 
@@ -32,4 +33,5 @@ def test_config_wird_importiert():
 def test_header_refresh_ist_eine_minute():
     """Nach unserer Änderung muss der Refresh-Intervall 60 Sekunden betragen."""
     import config
+
     assert config.HEADER_REFRESH_S == 60

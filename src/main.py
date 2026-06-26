@@ -1,5 +1,5 @@
-"""Hier wird das Dashboard erzeugt. Es werden alle anderen Python-Files hier importiert
-und verwendet, um das Dashboard über Streamlit zu erzeugen."""
+"""Hier wird das Dashboard erzeugt. Es importiert die übrigen Module und baut über
+Streamlit die Weboberfläche zusammen."""
 
 import logging
 
@@ -8,14 +8,10 @@ import streamlit as st
 
 import config
 from logging_setup import setup_logging
-from components.charts import (
-    draw_calendar_3monate,
-    create_chart_balkendiagramm,
-    create_chart_kurvendiagramm,
-)
+from components.charts import create_chart_tagesverlauf, draw_calendar_3monate
 from components.formulas import differenz_erzeugt_verbraucht
 from components.header import show_header
-from components.kpis import show_kpis
+from components.kpis import show_energiebilanz, show_kpis, show_momentan
 from components.storage import DataStorage
 
 # setup_logging nur einmal aufrufen – nicht bei jedem Streamlit-Rerun
@@ -28,7 +24,7 @@ logger.info("Die App wurde gestartet")
 
 @st.fragment(run_every=60)
 def show_dashboard_content() -> None:
-    """Lädt Daten und rendert KPIs + alle Charts als Einheit (jede Minute neu)."""
+    """Lädt Daten und rendert Live-Strip, KPIs, Energiebilanz und Charts."""
     db = DataStorage()
     df = db.load_raw_df()
 
@@ -39,29 +35,32 @@ def show_dashboard_content() -> None:
 
     logger.info("Datenbank geladen: %d Rohzeilen", len(df))
 
-    data = differenz_erzeugt_verbraucht(df)
+    data = differenz_erzeugt_verbraucht(df)  # Tagesbilanz-Serie für den Kalender
 
-    # ── KPIs ────────────────────────────────────────────────────────────────
+    # ── Live-Status (Momentanwerte) ─────────────────────────────────────────
+    show_momentan(df)
+
+    st.divider()
+
+    # ── KPI-Kacheln + Amortisierung ─────────────────────────────────────────
     show_kpis(df, db.gesamt_kwh_erzeugt())
 
     st.divider()
 
-    # ── Alle Figuren zuerst berechnen, dann gemeinsam anzeigen ──────────────
-    fig_balken = create_chart_balkendiagramm(df)
-    fig_kurve = create_chart_kurvendiagramm(df)
-    fig_kalender = draw_calendar_3monate(data, config.UNIT)
-
-    col_l, col_r = st.columns(2)
-    with col_l:
-        st.pyplot(fig_balken)
-    with col_r:
-        st.pyplot(fig_kurve)
-
-    plt.close(fig_balken)
-    plt.close(fig_kurve)
+    # ── Energiebilanz Tag / Monat / Jahr ────────────────────────────────────
+    show_energiebilanz(df)
 
     st.divider()
 
+    # ── Zeitverlauf des aktuellen Tages ─────────────────────────────────────
+    fig_verlauf = create_chart_tagesverlauf(df)
+    st.pyplot(fig_verlauf)
+    plt.close(fig_verlauf)
+
+    st.divider()
+
+    # ── 3-Monats-Kalender (tägliche Bilanz) ─────────────────────────────────
+    fig_kalender = draw_calendar_3monate(data, config.UNIT)
     st.pyplot(fig_kalender)
     plt.close(fig_kalender)
 
@@ -73,11 +72,7 @@ def streamlit_app() -> None:
         page_icon="☀️",
         layout="wide",
     )
-
-    # ── Header (refresht jede Minute: Wetter + Uhrzeit) ─────────────────────
     show_header()
-
-    # ── Daten, KPIs und Charts (alle zusammen als Fragment) ─────────────────
     show_dashboard_content()
 
 

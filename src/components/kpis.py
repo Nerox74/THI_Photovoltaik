@@ -160,14 +160,12 @@ def _show_amortisierung(
 
     arc_path = f"M {x_start} {cy} A {radius} {radius} 0 0 1 {x_end} {cy}"
 
-    # ── CO₂-Einsparung ───────────────────────────────────────────────────────
     co2_kg    = kwh_gesamt * config.CO2_FAKTOR_KG_PRO_KWH
     if co2_kg >= 1000:
         co2_str = f"{co2_kg / 1000:.2f} t"
     else:
         co2_str = f"{co2_kg:.1f} kg"
 
-    # ── Amortisierungsprognose ────────────────────────────────────────────────
     verbleibend_eur = config.ANSCHAFFUNGSKOSTEN_PV_ANLAGE * (1.0 - pct / 100.0)
     woechentlich    = kwh_woche * config.STROMPREIS   # € pro Woche
     if woechentlich > 0 and pct < 100:
@@ -191,14 +189,10 @@ def _show_amortisierung(
         f'padding:18px 24px;'
         f'margin-top:12px;'
         f'">'
-        # Titelzeile
         f'<div style="font-size:11px;color:{config.TEXT_GEDIMMT};margin-bottom:14px;">'
         f'📈 Amortisierung der PV-Anlage'
         f'</div>'
-        # Hauptzeile: Gauge | Geld-Stats | Zusatz-Stats
         f'<div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap;">'
-
-        # ── SVG-Gauge ─────────────────────────────────────────────────────────
         f'<svg viewBox="0 0 200 115" width="210" style="flex-shrink:0;">'
         f'<path d="{arc_path}" fill="none"'
         f' stroke="rgba(255,255,255,0.08)" stroke-width="14" stroke-linecap="round"/>'
@@ -215,8 +209,6 @@ def _show_amortisierung(
         f'<text x="{x_end + 2}" y="{cy + 14}" text-anchor="middle"'
         f' font-size="8" fill="{config.TEXT_SCHWACH}">100%</text>'
         f'</svg>'
-
-        # ── Geld-Stats ────────────────────────────────────────────────────────
         f'<div style="flex-shrink:0;">'
         f'<div style="font-size:12px;color:{config.TEXT_GEDIMMT};margin-bottom:4px;">'
         f'Bereits eingespart'
@@ -232,13 +224,10 @@ def _show_amortisierung(
         f'Strompreis: {config.STROMPREIS:.2f} €/kWh'
         f'</div>'
         f'</div>'
-
-        # ── Zusatz-Stats (CO₂ + Prognose) ────────────────────────────────────
         f'<div style="display:flex;gap:12px;flex-wrap:wrap;flex:1;">'
         + _mini_stat("🌿", "CO₂ eingespart", co2_str, config.FARBE_UEBERSCHUSS)
         + _mini_stat("⏳", "Noch bis Amortisierung", prognose_str, "#f39c12")
         + f'</div>'
-
         f'</div>'
         f'</div>',
         unsafe_allow_html=True,
@@ -256,7 +245,6 @@ def show_kpis(df: pd.DataFrame, kwh_gesamt_alltime: float | None = None) -> None
     """
     df_kwh = formulas.umrechnung_in_kwh(df)
 
-    # Hat der heutige Tag bereits Messdaten?
     maske_heute = df_kwh["collected_at"] >= (
         pd.Timestamp.now(tz="UTC")
         .tz_convert("Europe/Berlin")
@@ -279,7 +267,6 @@ def show_kpis(df: pd.DataFrame, kwh_gesamt_alltime: float | None = None) -> None
     amortisierung = min(100.0, eingespart / config.ANSCHAFFUNGSKOSTEN_PV_ANLAGE * 100)
     ersparnis_tag = kwh_heute * config.STROMPREIS
 
-    # Anzeige-Strings: "—" wenn noch keine Tagesdaten vorliegen
     if hat_daten_heute:
         txt_heute      = f"{kwh_heute:.1f} kWh"
         txt_heute_sub  = "Stand jetzt"
@@ -303,7 +290,6 @@ def show_kpis(df: pd.DataFrame, kwh_gesamt_alltime: float | None = None) -> None
         kwh_heute, kwh_woche, ersparnis_tag, auslastung, amortisierung,
     )
 
-    # ── 4 KPI-Kacheln ────────────────────────────────────────────────────────
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
@@ -311,32 +297,154 @@ def show_kpis(df: pd.DataFrame, kwh_gesamt_alltime: float | None = None) -> None
             _kpi_card("⚡", "Heute erzeugt", txt_heute, txt_heute_sub, erz_farbe),
             unsafe_allow_html=True,
         )
-
     with col2:
         st.markdown(
-            _kpi_card(
-                "📅", "Diese Woche",
-                f"{kwh_woche:.1f} kWh",
-                "letzte 7 Tage",
-            ),
+            _kpi_card("📅", "Diese Woche", f"{kwh_woche:.1f} kWh", "letzte 7 Tage"),
             unsafe_allow_html=True,
         )
-
     with col3:
         st.markdown(
             _kpi_card(
-                "💰", "Ersparnis heute",
-                txt_ersparnis, txt_ersp_sub,
+                "💰", "Ersparnis heute", txt_ersparnis, txt_ersp_sub,
                 config.FARBE_UEBERSCHUSS if hat_daten_heute and ersparnis_tag > 0 else "white",
             ),
             unsafe_allow_html=True,
         )
-
     with col4:
         st.markdown(
             _auslastung_bar(bar_auslastung, txt_auslastung),
             unsafe_allow_html=True,
         )
 
-    # ── Amortisierungs-Gauge (volle Breite) ──────────────────────────────────
     _show_amortisierung(amortisierung, eingespart, kwh_gesamt, kwh_woche)
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# NEU: geforderte Pflicht-Metriken (Momentanwerte + Tag/Monat/Jahr)
+# ═════════════════════════════════════════════════════════════════════════════
+
+_PULSE_CSS = """
+<style>
+@keyframes pv-pulse {
+  0%   { transform: scale(0.9); opacity: 1; }
+  70%  { transform: scale(1.7); opacity: 0; }
+  100% { transform: scale(0.9); opacity: 0; }
+}
+.pv-live-dot { position:relative; display:inline-block; width:9px; height:9px;
+  border-radius:50%; background:#2ecc71; margin-right:7px; }
+.pv-live-dot::after { content:''; position:absolute; left:0; top:0; width:9px;
+  height:9px; border-radius:50%; background:#2ecc71; animation:pv-pulse 1.8s infinite; }
+</style>
+"""
+
+
+def _momentan_block(icon: str, label: str, wert: str, farbe: str) -> str:
+    return (
+        f'<div style="flex:1;min-width:150px;text-align:center;">'
+        f'<div style="font-size:12px;color:{config.TEXT_GEDIMMT};margin-bottom:6px;">{icon} {label}</div>'
+        f'<div style="font-size:34px;font-weight:600;color:{farbe};line-height:1;">{wert}</div>'
+        f'</div>'
+    )
+
+
+def show_momentan(df: pd.DataFrame) -> None:
+    """Live-Strip: Momentanerzeugung, -verbrauch und aktuelle Netto-Leistung."""
+    df = df.copy()
+    df["collected_at"] = pd.to_datetime(df["collected_at"], utc=True)
+    letzte = df.sort_values("collected_at").iloc[-1]
+
+    mom_erz = float(letzte["pv_erzeugung_kw"])
+    mom_verb = float(letzte["netz_wert_kw"])
+    netto = mom_erz - mom_verb
+    stand = letzte["collected_at"].tz_convert("Europe/Berlin").strftime("%H:%M")
+
+    if netto >= 0:
+        netto_label, netto_farbe, netto_wert = (
+            "Einspeisung", config.FARBE_UEBERSCHUSS, f"{netto:.2f} kW")
+    else:
+        netto_label, netto_farbe, netto_wert = (
+            "Netzbezug", config.FARBE_DEFIZIT, f"{abs(netto):.2f} kW")
+
+    logger.debug(
+        "Momentan: Erzeugung=%.2f kW | Verbrauch=%.2f kW | Netto=%.2f kW",
+        mom_erz, mom_verb, netto,
+    )
+
+    st.markdown(_PULSE_CSS, unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="background:linear-gradient(135deg,{config.PANEL_BG} 0%,{config.KPI_BG} 100%);'
+        f'border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:18px 26px;'
+        f'display:flex;align-items:center;gap:24px;flex-wrap:wrap;">'
+        f'<div style="flex-shrink:0;">'
+        f'<div style="font-size:12px;color:{config.THI_HELLBLAU};font-weight:600;letter-spacing:0.5px;">'
+        f'<span class="pv-live-dot"></span>LIVE</div>'
+        f'<div style="font-size:11px;color:{config.TEXT_SCHWACH};margin-top:4px;">Stand {stand} Uhr</div>'
+        f'</div>'
+        f'<div style="width:1px;height:46px;background:rgba(255,255,255,0.1);"></div>'
+        + _momentan_block("⚡", "Momentanerzeugung", f"{mom_erz:.2f} kW", config.FARBE_UEBERSCHUSS)
+        + _momentan_block("🏠", "Momentanverbrauch", f"{mom_verb:.2f} kW", config.FARBE_DEFIZIT)
+        + _momentan_block("🔁", netto_label, netto_wert, netto_farbe)
+        + '</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _bilanz_spalte(titel: str, s: dict) -> str:
+    """Eine Spalte der Energiebilanz: Erzeugung & Verbrauch mit Vergleichsbalken."""
+    erz, verb = s["erzeugt"], s["verbraucht"]
+    bezug = max(erz, verb) or 1.0
+    erz_breite = min(100.0, erz / bezug * 100.0)
+    verb_breite = min(100.0, verb / bezug * 100.0)
+
+    return (
+        f'<div style="flex:1;min-width:210px;background:rgba(255,255,255,0.03);'
+        f'border-radius:10px;padding:16px 18px;">'
+        f'<div style="font-size:13px;color:white;font-weight:600;margin-bottom:14px;">{titel}</div>'
+        # Erzeugung
+        f'<div style="font-size:11px;color:{config.TEXT_GEDIMMT};margin-bottom:3px;">☀️ Erzeugung</div>'
+        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'
+        f'<div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;">'
+        f'<div style="height:8px;width:{erz_breite:.1f}%;background:{config.FARBE_UEBERSCHUSS};border-radius:4px;"></div>'
+        f'</div>'
+        f'<div style="font-size:14px;font-weight:600;color:{config.FARBE_UEBERSCHUSS};min-width:80px;text-align:right;">{erz:.1f} kWh</div>'
+        f'</div>'
+        # Verbrauch
+        f'<div style="font-size:11px;color:{config.TEXT_GEDIMMT};margin-bottom:3px;">🔌 Verbrauch</div>'
+        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">'
+        f'<div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;">'
+        f'<div style="height:8px;width:{verb_breite:.1f}%;background:{config.FARBE_DEFIZIT};border-radius:4px;"></div>'
+        f'</div>'
+        f'<div style="font-size:14px;font-weight:600;color:{config.FARBE_DEFIZIT};min-width:80px;text-align:right;">{verb:.1f} kWh</div>'
+        f'</div>'
+        # PV-Quote
+        f'<div style="font-size:11px;color:{config.TEXT_SCHWACH};border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;">'
+        f'🌱 {s["quote"]:.0f}% des Verbrauchs aus PV gedeckt</div>'
+        f'</div>'
+    )
+
+
+def show_energiebilanz(df: pd.DataFrame) -> None:
+    """Erzeugung & Verbrauch für Tag / Monat / Jahr im direkten Vergleich (mit PV-Quote)."""
+    df_kwh = formulas.umrechnung_in_kwh(df)
+    tag = formulas.summen_zeitraum(df_kwh, "Tag")
+    monat = formulas.summen_zeitraum(df_kwh, "Monat")
+    jahr = formulas.summen_zeitraum(df_kwh, "Jahr")
+
+    logger.debug(
+        "Energiebilanz: Tag=%.1f/%.1f | Monat=%.1f/%.1f | Jahr=%.1f/%.1f kWh (Erz/Verb)",
+        tag["erzeugt"], tag["verbraucht"], monat["erzeugt"], monat["verbraucht"],
+        jahr["erzeugt"], jahr["verbraucht"],
+    )
+
+    st.markdown(
+        f'<div style="background:{config.KPI_BG};border:1px solid rgba(255,255,255,0.07);'
+        f'border-radius:{config.KPI_RADIUS};padding:18px 22px;">'
+        f'<div style="font-size:13px;color:{config.TEXT_GEDIMMT};margin-bottom:16px;">'
+        f'📊 Energiebilanz – Erzeugung &amp; Verbrauch</div>'
+        f'<div style="display:flex;gap:14px;flex-wrap:wrap;">'
+        + _bilanz_spalte("Heute", tag)
+        + _bilanz_spalte("Dieser Monat", monat)
+        + _bilanz_spalte("Dieses Jahr", jahr)
+        + '</div></div>',
+        unsafe_allow_html=True,
+    )
