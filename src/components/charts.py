@@ -16,8 +16,18 @@ from components.formulas import umrechnung_in_kwh
 logger = logging.getLogger(__name__)
 
 MONTH_NAMES_DE = [
-    "Januar", "Februar", "März", "April", "Mai", "Juni",
-    "Juli", "August", "September", "Oktober", "November", "Dezember",
+    "Januar",
+    "Februar",
+    "März",
+    "April",
+    "Mai",
+    "Juni",
+    "Juli",
+    "August",
+    "September",
+    "Oktober",
+    "November",
+    "Dezember",
 ]
 
 
@@ -50,14 +60,24 @@ def create_chart_balkendiagramm(df: pd.DataFrame):
     ax.set_facecolor(config.PANEL_BG)
 
     # Dezente horizontale Gitterlinien
-    ax.yaxis.grid(True, color="rgba(255,255,255,0.06)" if False else "#2a3045",
-                  linewidth=0.5, linestyle="--", zorder=0)
+    ax.yaxis.grid(
+        True,
+        color="rgba(255,255,255,0.06)" if False else "#2a3045",
+        linewidth=0.5,
+        linestyle="--",
+        zorder=0,
+    )
     ax.set_axisbelow(True)
 
     ax.bar(
-        stunden_bilanz.index, stunden_bilanz.values,
-        color=farben, edgecolor="none", linewidth=0, width=0.75,
-        alpha=0.92, zorder=2,
+        stunden_bilanz.index,
+        stunden_bilanz.values,
+        color=farben,
+        edgecolor="none",
+        linewidth=0,
+        width=0.75,
+        alpha=0.92,
+        zorder=2,
     )
     ax.axhline(0, color=config.TEXT_GEDIMMT, linewidth=0.8, linestyle="-", zorder=3)
 
@@ -67,8 +87,10 @@ def create_chart_balkendiagramm(df: pd.DataFrame):
     y_range = max(abs(val_max), abs(val_min)) or 1
     pad = y_range * 0.06
 
-    for stunde, val in [(stunden_bilanz.idxmax(), val_max),
-                        (stunden_bilanz.idxmin(), val_min)]:
+    for stunde, val in [
+        (stunden_bilanz.idxmax(), val_max),
+        (stunden_bilanz.idxmin(), val_min),
+    ]:
         if abs(val) < 0.001:
             continue
         ax.annotate(
@@ -77,21 +99,28 @@ def create_chart_balkendiagramm(df: pd.DataFrame):
             xytext=(stunde, val + pad * (1 if val >= 0 else -1)),
             ha="center",
             va="bottom" if val >= 0 else "top",
-            color="white", fontsize=6.5, fontweight="bold",
-            bbox=dict(boxstyle="round,pad=0.25", fc=config.PANEL_BG,
-                      ec="none", alpha=0.75),
+            color="white",
+            fontsize=6.5,
+            fontweight="bold",
+            bbox=dict(
+                boxstyle="round,pad=0.25", fc=config.PANEL_BG, ec="none", alpha=0.75
+            ),
         )
 
     ax.set_xticks(range(24))
-    ax.set_xticklabels([f"{h:02d}" for h in range(24)], color=config.TEXT_GEDIMMT,
-                       fontsize=6)
+    ax.set_xticklabels(
+        [f"{h:02d}" for h in range(24)], color=config.TEXT_GEDIMMT, fontsize=6
+    )
     ax.tick_params(axis="y", colors=config.TEXT_GEDIMMT, labelsize=6.5)
     ax.tick_params(axis="both", length=0)
     ax.set_xlabel("Uhrzeit", color=config.TEXT_GEDIMMT, fontsize=8, labelpad=6)
     ax.set_ylabel("Ø Bilanz (kWh)", color=config.TEXT_GEDIMMT, fontsize=8, labelpad=6)
     ax.set_title(
         f"Ø Tagesbilanz pro Stunde  (über {anzahl_tage} {'Tag' if anzahl_tage == 1 else 'Tage'})",
-        color="white", fontsize=9, fontweight="bold", pad=10,
+        color="white",
+        fontsize=9,
+        fontweight="bold",
+        pad=10,
     )
 
     for spine in ax.spines.values():
@@ -103,9 +132,12 @@ def create_chart_balkendiagramm(df: pd.DataFrame):
     ]
     ax.legend(
         handles=legende,
-        facecolor=config.PANEL_BG, edgecolor="none",
-        labelcolor="white", fontsize=7,
-        loc="upper right", framealpha=0.85,
+        facecolor=config.PANEL_BG,
+        edgecolor="none",
+        labelcolor="white",
+        fontsize=7,
+        loc="upper right",
+        framealpha=0.85,
     )
 
     plt.tight_layout(pad=1.2)
@@ -133,9 +165,9 @@ def create_chart_kurvendiagramm(df: pd.DataFrame):
         .reindex(range(24), fill_value=0)
     )
 
-    idx_max_erz  = stunden["kwh_erzeugt"].idxmax()
-    max_erz      = stunden["kwh_erzeugt"].max()
-    y_max        = max(max_erz, stunden["kwh_verbraucht"].max()) or 1
+    idx_max_erz = stunden["kwh_erzeugt"].idxmax()
+    max_erz = stunden["kwh_erzeugt"].max()
+    y_max = max(max_erz, stunden["kwh_verbraucht"].max()) or 1
 
     fig, ax = plt.subplots(figsize=(7, 3.4), facecolor=config.CHART_BG)
     ax.set_facecolor(config.PANEL_BG)
@@ -147,21 +179,33 @@ def create_chart_kurvendiagramm(df: pd.DataFrame):
     x = stunden.index
 
     # Fläche unter der Kurve (gut sichtbar, aber nicht dominant)
-    ax.fill_between(x, stunden["kwh_erzeugt"],
-                    alpha=0.20, color=config.FARBE_UEBERSCHUSS, zorder=1)
-    ax.fill_between(x, stunden["kwh_verbraucht"],
-                    alpha=0.15, color=config.FARBE_DEFIZIT, zorder=1)
+    ax.fill_between(
+        x, stunden["kwh_erzeugt"], alpha=0.20, color=config.FARBE_UEBERSCHUSS, zorder=1
+    )
+    ax.fill_between(
+        x, stunden["kwh_verbraucht"], alpha=0.15, color=config.FARBE_DEFIZIT, zorder=1
+    )
 
     # Linien
     ax.plot(
-        x, stunden["kwh_erzeugt"],
-        color=config.FARBE_UEBERSCHUSS, linewidth=2.0,
-        marker="o", markersize=2.5, label="Ø Erzeugung (kWh)", zorder=3,
+        x,
+        stunden["kwh_erzeugt"],
+        color=config.FARBE_UEBERSCHUSS,
+        linewidth=2.0,
+        marker="o",
+        markersize=2.5,
+        label="Ø Erzeugung (kWh)",
+        zorder=3,
     )
     ax.plot(
-        x, stunden["kwh_verbraucht"],
-        color=config.FARBE_DEFIZIT, linewidth=2.0,
-        marker="o", markersize=2.5, label="Ø Verbrauch (kWh)", zorder=3,
+        x,
+        stunden["kwh_verbraucht"],
+        color=config.FARBE_DEFIZIT,
+        linewidth=2.0,
+        marker="o",
+        markersize=2.5,
+        label="Ø Verbrauch (kWh)",
+        zorder=3,
     )
 
     # Nur Erzeugungsmaximum annotieren (sauberste Information)
@@ -172,18 +216,21 @@ def create_chart_kurvendiagramm(df: pd.DataFrame):
             f"Peak {max_erz:.1f} kWh",
             xy=(idx_max_erz, max_erz),
             xytext=(idx_max_erz + x_off, max_erz + y_max * 0.10),
-            color=config.FARBE_UEBERSCHUSS, fontsize=7, fontweight="bold",
-            arrowprops=dict(arrowstyle="-|>", color=config.FARBE_UEBERSCHUSS,
-                            lw=0.9, mutation_scale=8),
-            bbox=dict(boxstyle="round,pad=0.2", fc=config.PANEL_BG,
-                      ec="none", alpha=0.8),
+            color=config.FARBE_UEBERSCHUSS,
+            fontsize=7,
+            fontweight="bold",
+            arrowprops=dict(
+                arrowstyle="-|>", color=config.FARBE_UEBERSCHUSS, lw=0.9, mutation_scale=8
+            ),
+            bbox=dict(boxstyle="round,pad=0.2", fc=config.PANEL_BG, ec="none", alpha=0.8),
         )
 
     ax.set_xlim(-0.5, 23.5)
     ax.set_ylim(bottom=0)
     ax.set_xticks(range(24))
-    ax.set_xticklabels([f"{h:02d}" for h in range(24)], color=config.TEXT_GEDIMMT,
-                       fontsize=6)
+    ax.set_xticklabels(
+        [f"{h:02d}" for h in range(24)], color=config.TEXT_GEDIMMT, fontsize=6
+    )
     ax.tick_params(axis="y", colors=config.TEXT_GEDIMMT, labelsize=6.5)
     ax.tick_params(axis="both", length=0)
     ax.set_xlabel("Uhrzeit", color=config.TEXT_GEDIMMT, fontsize=8, labelpad=6)
@@ -191,16 +238,22 @@ def create_chart_kurvendiagramm(df: pd.DataFrame):
     ax.set_title(
         f"Ø Tagesverlauf: Erzeugung & Verbrauch  (über {anzahl_tage} "
         f"{'Tag' if anzahl_tage == 1 else 'Tage'})",
-        color="white", fontsize=9, fontweight="bold", pad=10,
+        color="white",
+        fontsize=9,
+        fontweight="bold",
+        pad=10,
     )
 
     for spine in ax.spines.values():
         spine.set_visible(False)
 
     ax.legend(
-        facecolor=config.PANEL_BG, edgecolor="none",
-        labelcolor="white", fontsize=7,
-        loc="upper right", framealpha=0.85,
+        facecolor=config.PANEL_BG,
+        edgecolor="none",
+        labelcolor="white",
+        fontsize=7,
+        loc="upper right",
+        framealpha=0.85,
     )
 
     plt.tight_layout(pad=1.2)
@@ -232,7 +285,9 @@ def draw_calendar_3monate(data: pd.Series, unit: str):
     fig.subplots_adjust(top=0.88, bottom=0.14, left=0.02, right=0.98, wspace=0.08)
     fig.suptitle(
         "Tägliche Bilanz – Letzte 3 Monate (Erzeugung − Verbrauch)",
-        fontsize=11, color="white", fontweight="bold",
+        fontsize=11,
+        color="white",
+        fontweight="bold",
     )
 
     day_labels = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
@@ -241,7 +296,10 @@ def draw_calendar_3monate(data: pd.Series, unit: str):
         ax.set_facecolor(config.PANEL_BG)
         ax.set_title(
             f"{MONTH_NAMES_DE[month - 1]} {year}",
-            color="white", fontsize=9, fontweight="bold", pad=6,
+            color="white",
+            fontsize=9,
+            fontweight="bold",
+            pad=6,
         )
 
         monat_data = data[(data.index.year == year) & (data.index.month == month)]
@@ -253,9 +311,14 @@ def draw_calendar_3monate(data: pd.Series, unit: str):
 
         for d, label in enumerate(day_labels):
             ax.text(
-                d + 0.5, 6.6, label,
-                ha="center", va="center",
-                color=config.TEXT_GEDIMMT, fontsize=6, fontweight="bold",
+                d + 0.5,
+                6.6,
+                label,
+                ha="center",
+                va="center",
+                color=config.TEXT_GEDIMMT,
+                fontsize=6,
+                fontweight="bold",
             )
 
         row, col = 0, first_weekday
@@ -272,21 +335,34 @@ def draw_calendar_3monate(data: pd.Series, unit: str):
                 text_color = "black" if brightness > 0.5 else "white"
 
             rect = mpatches.FancyBboxPatch(
-                (col + 0.05, 5 - row + 0.05), 0.9, 0.85,
+                (col + 0.05, 5 - row + 0.05),
+                0.9,
+                0.85,
                 boxstyle="round,pad=0.05",
-                facecolor=cell_color, edgecolor=config.CHART_BG, linewidth=0.8,
+                facecolor=cell_color,
+                edgecolor=config.CHART_BG,
+                linewidth=0.8,
             )
             ax.add_patch(rect)
             ax.text(
-                col + 0.5, 5 - row + 0.55, str(day),
-                ha="center", va="center",
-                color=text_color, fontsize=6, fontweight="bold",
+                col + 0.5,
+                5 - row + 0.55,
+                str(day),
+                ha="center",
+                va="center",
+                color=text_color,
+                fontsize=6,
+                fontweight="bold",
             )
             if not pd.isna(value):
                 ax.text(
-                    col + 0.5, 5 - row + 0.18, f"{value:+.0f}",
-                    ha="center", va="center",
-                    color=text_color, fontsize=4.5,
+                    col + 0.5,
+                    5 - row + 0.18,
+                    f"{value:+.0f}",
+                    ha="center",
+                    va="center",
+                    color=text_color,
+                    fontsize=4.5,
                 )
 
             col += 1
@@ -304,7 +380,8 @@ def draw_calendar_3monate(data: pd.Series, unit: str):
     cbar = fig.colorbar(sm, cax=cbar_ax, orientation="horizontal")
     cbar.set_label(
         f"Bilanz ({unit})   ← Verbrauchsüberschuss  |  Erzeugungsüberschuss →",
-        color="white", fontsize=8,
+        color="white",
+        fontsize=8,
     )
     cbar.ax.xaxis.set_tick_params(color="white")
     plt.setp(cbar.ax.xaxis.get_ticklabels(), color="white", fontsize=7)

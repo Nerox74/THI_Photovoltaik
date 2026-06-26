@@ -7,16 +7,16 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 import config
-from logging_setup import setup_logging
 from components.charts import (
-    draw_calendar_3monate,
     create_chart_balkendiagramm,
     create_chart_kurvendiagramm,
+    draw_calendar_3monate,
 )
 from components.formulas import differenz_erzeugt_verbraucht
 from components.header import show_header
 from components.kpis import show_kpis
 from components.storage import DataStorage
+from logging_setup import setup_logging
 
 # setup_logging nur einmal aufrufen – nicht bei jedem Streamlit-Rerun
 if not logging.getLogger().handlers:

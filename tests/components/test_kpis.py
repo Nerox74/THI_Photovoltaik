@@ -1,14 +1,13 @@
 """Unittests für kpis.py: Hilfsfunktionen _summe_kwh und _kpi_card."""
 
 import pandas as pd
-import pytest
 
-from components.kpis import _summe_kwh, _kpi_card, _auslastung_bar, _mini_stat
-
+from components.kpis import _auslastung_bar, _kpi_card, _mini_stat, _summe_kwh
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Hilfsfunktionen
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def baue_test_df(stunden_versatz: list[int] | None = None) -> pd.DataFrame:
     """Erstellt einen DataFrame mit Messpunkten relativ zu jetzt.
@@ -23,7 +22,7 @@ def baue_test_df(stunden_versatz: list[int] | None = None) -> pd.DataFrame:
     return pd.DataFrame(
         {
             "collected_at": [jetzt + pd.Timedelta(hours=h) for h in stunden_versatz],
-            "kwh_erzeugt":   [5.0, 3.0][: len(stunden_versatz)],
+            "kwh_erzeugt": [5.0, 3.0][: len(stunden_versatz)],
             "kwh_verbraucht": [2.0, 1.0][: len(stunden_versatz)],
         }
     )
@@ -32,6 +31,7 @@ def baue_test_df(stunden_versatz: list[int] | None = None) -> pd.DataFrame:
 # ─────────────────────────────────────────────────────────────────────────────
 # Tests: _summe_kwh
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_summe_kwh_erzeugt_addiert_richtig():
     df = baue_test_df()
@@ -50,8 +50,8 @@ def test_summe_kwh_gibt_null_zurueck_wenn_keine_werte_im_zeitraum():
     vor_langem = pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=400)
     df = pd.DataFrame(
         {
-            "collected_at":   [vor_langem],
-            "kwh_erzeugt":    [100.0],
+            "collected_at": [vor_langem],
+            "kwh_erzeugt": [100.0],
             "kwh_verbraucht": [50.0],
         }
     )
@@ -82,8 +82,8 @@ def test_summe_kwh_wert_von_vor_8_tagen_nicht_in_woche():
     jetzt = pd.Timestamp.now(tz="UTC")
     df = pd.DataFrame(
         {
-            "collected_at":   [jetzt - pd.Timedelta(days=8)],
-            "kwh_erzeugt":    [42.0],
+            "collected_at": [jetzt - pd.Timedelta(days=8)],
+            "kwh_erzeugt": [42.0],
             "kwh_verbraucht": [10.0],
         }
     )
@@ -100,6 +100,7 @@ def test_summe_kwh_leerer_dataframe_gibt_null():
 # ─────────────────────────────────────────────────────────────────────────────
 # Tests: _kpi_card (HTML-Ausgabe)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_kpi_card_enthaelt_titel():
     html = _kpi_card("⚡", "Heute erzeugt", "5.0 kWh", "Stand jetzt")
@@ -131,6 +132,7 @@ def test_kpi_card_html_ist_vollstaendiger_div():
 # Tests: _auslastung_bar
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_auslastung_bar_enthaelt_text():
     html = _auslastung_bar(50.0, "50.0 %")
     assert "50.0 %" in html
@@ -138,8 +140,8 @@ def test_auslastung_bar_enthaelt_text():
 
 def test_auslastung_bar_gruen_bei_hoher_auslastung():
     """≥ 60 % → grüne Balkenfarbe."""
-    from components import kpis as kpis_modul
     import config
+
     html = _auslastung_bar(80.0, "80.0 %")
     assert config.FARBE_UEBERSCHUSS in html
 
@@ -147,6 +149,7 @@ def test_auslastung_bar_gruen_bei_hoher_auslastung():
 def test_auslastung_bar_rot_bei_niedriger_auslastung():
     """< 25 % → rote Balkenfarbe."""
     import config
+
     html = _auslastung_bar(10.0, "10.0 %")
     assert config.FARBE_DEFIZIT in html
 
@@ -171,6 +174,7 @@ def test_auslastung_bar_hat_min_height():
 # ─────────────────────────────────────────────────────────────────────────────
 # Tests: _mini_stat
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_mini_stat_enthaelt_label():
     html = _mini_stat("🌿", "CO₂ eingespart", "42 kg")

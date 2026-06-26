@@ -70,7 +70,9 @@ def automatische_abfrage() -> None:
     db = DataStorage()
     logger.info(
         "Starte Abfrage: URL=%s, Intervall=%ds, Max-Wartezeit=%ds",
-        URL, config.INTERVALL_SEKUNDEN, config.MAX_WAIT_TIME,
+        URL,
+        config.INTERVALL_SEKUNDEN,
+        config.MAX_WAIT_TIME,
     )
     aktuelle_wartezeit = config.INTERVALL_SEKUNDEN
     letzte_wartung = time.monotonic()
@@ -84,14 +86,17 @@ def automatische_abfrage() -> None:
             if db.insert_row(zeile):
                 logger.info(
                     "[%s] gespeichert -> PV: %s kW | Netz: %s kW",
-                    zeile["uhrzeit"], zeile["pv_erzeugung_kw"], zeile["netz_wert_kw"],
+                    zeile["uhrzeit"],
+                    zeile["pv_erzeugung_kw"],
+                    zeile["netz_wert_kw"],
                 )
                 aktuelle_wartezeit = config.INTERVALL_SEKUNDEN
             else:
                 aktuelle_wartezeit = min(aktuelle_wartezeit * 2, config.MAX_WAIT_TIME)
                 logger.info(
                     "[%s] keine neuen Daten – übersprungen. Nächster Versuch in %.1f Min.",
-                    zeile["uhrzeit"], aktuelle_wartezeit / 60,
+                    zeile["uhrzeit"],
+                    aktuelle_wartezeit / 60,
                 )
 
             # Einmal pro Stunde: Tagesbilanz auffrischen + alte Rohdaten löschen

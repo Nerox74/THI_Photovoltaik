@@ -27,11 +27,11 @@ REQUEST_TIMEOUT = 30
 # ─────────────────────────────────────────────────────────────────────────────
 # BERECHNUNG (formulas.py / kpis.py)
 # ─────────────────────────────────────────────────────────────────────────────
-MAX_LUECKE_H = 1.5   # Intervalle > 1,5 h gelten als Datenlücke (Collector war aus)
+MAX_LUECKE_H = 1.5  # Intervalle > 1,5 h gelten als Datenlücke (Collector war aus)
 STROMPREIS = 0.39
 ANSCHAFFUNGSKOSTEN_PV_ANLAGE = 15_000.0
 MAX_TAGESERZEUGUNG_KWH = 50.0
-CO2_FAKTOR_KG_PRO_KWH = 0.38   # Deutscher Strommix 2024 (ca. 380 g CO₂/kWh)
+CO2_FAKTOR_KG_PRO_KWH = 0.38  # Deutscher Strommix 2024 (ca. 380 g CO₂/kWh)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STANDORT & WETTER (header.py)
@@ -55,10 +55,10 @@ THI_BLAUGRAU_HELL = "#B8D4EE"
 # ─────────────────────────────────────────────────────────────────────────────
 # DASHBOARD / CHART-FARBEN (Dark Theme)
 # ─────────────────────────────────────────────────────────────────────────────
-CHART_BG = "#1a1a2e"      # Figur-Hintergrund
-PANEL_BG = "#16213e"      # Achsen-/Panel-Hintergrund
-LEER_TAG_BG = "#2a2a4a"   # leere Kalenderzelle
-KPI_BG = "#1e2130"        # KPI-Kachel-Hintergrund
+CHART_BG = "#1a1a2e"  # Figur-Hintergrund
+PANEL_BG = "#16213e"  # Achsen-/Panel-Hintergrund
+LEER_TAG_BG = "#2a2a4a"  # leere Kalenderzelle
+KPI_BG = "#1e2130"  # KPI-Kachel-Hintergrund
 KPI_RADIUS = "10px"
 
 TEXT_HELL = "white"
@@ -66,7 +66,7 @@ TEXT_GEDIMMT = "#aaaacc"
 TEXT_SCHWACH = "#666688"
 
 FARBE_UEBERSCHUSS = "#2ecc71"  # grün – mehr erzeugt als verbraucht
-FARBE_DEFIZIT = "#e74c3c"      # rot  – mehr verbraucht als erzeugt
+FARBE_DEFIZIT = "#e74c3c"  # rot  – mehr verbraucht als erzeugt
 
 # ─────────────────────────────────────────────────────────────────────────────
 # CHARTS (charts.py)
@@ -75,6 +75,16 @@ YEAR = 2026
 UNIT = "kWh"
 
 MONTH_NAMES_DE = [
-    "Januar", "Februar", "März", "April", "Mai", "Juni",
-    "Juli", "August", "September", "Oktober", "November", "Dezember",
+    "Januar",
+    "Februar",
+    "März",
+    "April",
+    "Mai",
+    "Juni",
+    "Juli",
+    "August",
+    "September",
+    "Oktober",
+    "November",
+    "Dezember",
 ]

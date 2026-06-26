@@ -2,7 +2,9 @@
 
 # Imports
 import logging
+
 import pandas as pd
+
 import config
 
 logger = logging.getLogger(__name__)

@@ -1,6 +1,7 @@
 """Unittests für charts.py."""
 
 import matplotlib
+
 matplotlib.use("Agg")  # kein Bildschirm nötig, muss vor plt-Import stehen
 
 import matplotlib.pyplot as plt
@@ -40,6 +41,7 @@ def baue_test_series():
 # Typ-Checks: alle Chart-Funktionen müssen ein plt.Figure zurückgeben
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_balkendiagramm_gibt_figure_zurueck():
     fig = create_chart_balkendiagramm(baue_test_df())
     assert isinstance(fig, plt.Figure)
@@ -61,6 +63,7 @@ def test_draw_calendar_3monate_gibt_figure_zurueck():
 # ─────────────────────────────────────────────────────────────────────────────
 # Balkendiagramm
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_balkendiagramm_achsenbeschriftung():
     fig = create_chart_balkendiagramm(baue_test_df())
@@ -98,6 +101,7 @@ def test_balkendiagramm_leerer_df_gibt_figure_zurueck():
 # Kurvendiagramm
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_kurvendiagramm_titel_korrekt():
     fig = create_chart_kurvendiagramm(baue_test_df())
     ax = fig.axes[0]
@@ -125,6 +129,7 @@ def test_kurvendiagramm_leerer_df_gibt_figure_zurueck():
 # ─────────────────────────────────────────────────────────────────────────────
 # 3-Monats-Kalender
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_draw_calendar_3monate_hat_vier_achsen():
     """3 Monats-Subplots + 1 Colorbar-Achse = 4."""

@@ -35,11 +35,7 @@ def _to_utc_iso(zeitstempel: str) -> str:
 
     So sind String-Vergleiche in SQL DST-sicher (kein Mix aus +01:00/+02:00).
     """
-    return (
-        pd.Timestamp(zeitstempel)
-        .tz_convert("UTC")
-        .isoformat()
-    )
+    return pd.Timestamp(zeitstempel).tz_convert("UTC").isoformat()
 
 
 class DataStorage:
@@ -62,8 +58,7 @@ class DataStorage:
 
     def _init_schema(self) -> None:
         with self._connect() as conn:
-            conn.executescript(
-                """
+            conn.executescript("""
                 CREATE TABLE IF NOT EXISTS messungen (
                     collected_at    TEXT PRIMARY KEY,
                     pv_erzeugung_kw REAL NOT NULL,
@@ -77,8 +72,7 @@ class DataStorage:
                     bilanz_kwh     REAL NOT NULL,
                     aktualisiert   TEXT NOT NULL
                 );
-                """
-            )
+                """)
         logger.info("DB-Schema bereit: %s", self.db_path)
 
     # ── Schreiben (Collector) ────────────────────────────────────────────────
@@ -153,9 +147,7 @@ class DataStorage:
             return 0
 
         df_kwh = formulas.umrechnung_in_kwh(df)
-        df_kwh["datum"] = (
-            df_kwh["collected_at"].dt.tz_convert("Europe/Berlin").dt.date
-        )
+        df_kwh["datum"] = df_kwh["collected_at"].dt.tz_convert("Europe/Berlin").dt.date
         summen = df_kwh.groupby("datum")[["kwh_erzeugt", "kwh_verbraucht"]].sum()
         summen["bilanz_kwh"] = summen["kwh_erzeugt"] - summen["kwh_verbraucht"]
 
@@ -188,9 +180,7 @@ class DataStorage:
         self.rollup_tagesbilanz()
         cutoff = (datetime.now(timezone.utc) - timedelta(days=tage)).isoformat()
         with self._connect() as conn:
-            cur = conn.execute(
-                "DELETE FROM messungen WHERE collected_at < ?", (cutoff,)
-            )
+            cur = conn.execute("DELETE FROM messungen WHERE collected_at < ?", (cutoff,))
             geloescht = cur.rowcount
         if geloescht:
             logger.info("Retention: %d Rohzeilen (<%d Tage) gelöscht", geloescht, tage)
