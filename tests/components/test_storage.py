@@ -3,13 +3,18 @@
 import pandas as pd
 import pytest
 
-from components.storage import DataStorage
+from components.storage import DataStorage, _to_utc_iso
 
 
 @pytest.fixture
 def db(tmp_path):
-    """Isolierte In-Memory-ähnliche SQLite-DB für jeden Test."""
+    """Isolierte SQLite-DB für jeden Test (eigene Datei je tmp_path)."""
     return DataStorage(db_path=tmp_path / "test.db")
+
+
+def _zeile(ts, pv=10.0, netz=5.0):
+    """Baut eine Messzeile. Default: Erzeugung > Verbrauch."""
+    return {"collected_at": ts, "pv_erzeugung_kw": pv, "netz_wert_kw": netz}
 
 
 ZEILE_A = {
@@ -53,6 +58,32 @@ def test_insert_row_mehrere_zeilen(db):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Zeitstempel-Normalisierung (Mikrosekunden -> Sekunden, UTC)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_to_utc_iso_offset_wird_sekundengenau(db):
+    assert _to_utc_iso("2026-06-19T08:12:52.457293+00:00") == "2026-06-19T08:12:52+00:00"
+
+
+def test_to_utc_iso_naiv_als_lokalzeit(db):
+    # 00:10 lokal (Sommer, CEST=UTC+2) -> 22:10 UTC am Vortag
+    assert _to_utc_iso("2026-06-19T00:10:00") == "2026-06-18T22:10:00+00:00"
+
+
+def test_normalisierung_macht_dedup_robust(db):
+    # Mikrosekunden-Variante wie Alt-Bestand einschmuggeln, dann normalisieren
+    with db._connect() as conn:
+        conn.execute(
+            "INSERT INTO messungen VALUES (?, ?, ?)",
+            ("2026-06-19T08:00:00.123456+00:00", 10.0, 5.0),
+        )
+    assert db.normalize_timestamps() == 1
+    # Jetzt wird derselbe Messpunkt als Duplikat erkannt
+    assert db.insert_row(_zeile("2026-06-19T08:00:00.999+00:00")) is False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # load_raw_df
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -75,7 +106,6 @@ def test_load_raw_df_ist_nach_zeitstempel_sortiert(db):
     db.insert_row(ZEILE_B)  # später zuerst einfügen
     db.insert_row(ZEILE_A)
     df = db.load_raw_df()
-    # Muss aufsteigend sortiert sein
     assert df["collected_at"].iloc[0] < df["collected_at"].iloc[1]
 
 
@@ -93,7 +123,7 @@ def test_insert_many_fuegt_alle_ein(db):
 def test_insert_many_ignoriert_duplikate(db):
     db.insert_row(ZEILE_A)
     neu = db.insert_many([ZEILE_A, ZEILE_B])
-    # ZEILE_A ist Duplikat → nur ZEILE_B wird eingefügt
+    # ZEILE_A ist Duplikat -> nur ZEILE_B wird eingefügt
     assert neu == 1
 
 
@@ -129,7 +159,7 @@ def test_gesamt_kwh_erzeugt_nach_rollup(db):
 def test_prune_loescht_rohzeilen(db):
     db.insert_row(ZEILE_A)
     db.insert_row(ZEILE_B)
-    geloescht = db.prune(tage=0)  # 0 Tage → alles weg
+    geloescht = db.prune(tage=0)  # 0 Tage -> alles weg
     assert geloescht == 2
     assert db.load_raw_df().empty
 
@@ -140,3 +170,35 @@ def test_prune_behaelt_tagesbilanz(db):
     db.insert_row(ZEILE_B)
     db.prune(tage=0)
     assert db.gesamt_kwh_erzeugt() > 0.0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# summen_seit & max_tageserzeugung (Dauer-Tabelle, überlebt Pruning)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_summen_seit_und_eigen(db):
+    for ts in ("2026-03-01T09:00:00+00:00", "2026-03-01T10:00:00+00:00"):
+        db.insert_row(_zeile(ts, pv=10.0, netz=30.0))
+    db.rollup_tagesbilanz()
+    s = db.summen_seit("2026-01-01")
+    assert s["erzeugt"] > 0
+    assert s["verbraucht"] > s["erzeugt"]
+    assert abs(s["eigen"] - s["erzeugt"]) < 1e-6  # Erzeugung komplett eigenverbraucht
+    assert 0 < s["quote"] <= 100
+
+
+def test_summen_seit_ueberlebt_prune(db):
+    db.insert_row(_zeile("2026-03-01T09:00:00+00:00", pv=10.0, netz=30.0))
+    db.insert_row(_zeile("2026-03-01T10:00:00+00:00", pv=10.0, netz=30.0))
+    db.prune(tage=0)
+    assert db.load_raw_df().empty
+    assert db.summen_seit("2026-01-01")["erzeugt"] > 0  # aus tagesbilanz rekonstruiert
+
+
+def test_max_tageserzeugung(db):
+    assert db.max_tageserzeugung() == 0.0
+    db.insert_row(_zeile("2026-03-01T09:00:00+00:00", pv=20.0, netz=5.0))
+    db.insert_row(_zeile("2026-03-01T09:30:00+00:00", pv=20.0, netz=5.0))
+    db.rollup_tagesbilanz()
+    assert db.max_tageserzeugung() > 0.0

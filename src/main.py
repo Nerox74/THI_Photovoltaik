@@ -48,7 +48,7 @@ def show_dashboard_content() -> None:
     st.divider()
 
     # ── Energiebilanz Tag / Monat / Jahr ────────────────────────────────────
-    show_energiebilanz(df)
+    show_energiebilanz(df, db)
 
     st.divider()
 

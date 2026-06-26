@@ -447,12 +447,17 @@ def _bilanz_spalte(titel: str, s: dict) -> str:
     )
 
 
-def show_energiebilanz(df: pd.DataFrame) -> None:
-    """Erzeugung & Verbrauch für Tag / Monat / Jahr im direkten Vergleich (mit PV-Quote)."""
+def show_energiebilanz(df: pd.DataFrame, db) -> None:
+    """Erzeugung & Verbrauch für Tag / Monat / Jahr im direkten Vergleich (mit PV-Quote).
+
+    Tag & Monat aus den Live-Rohdaten (innerhalb der Retention, sekundengenau);
+    Jahr aus der dauerhaften Tagesbilanz, damit es das 90-Tage-Pruning überlebt.
+    """
     df_kwh = formulas.umrechnung_in_kwh(df)
     tag = formulas.summen_zeitraum(df_kwh, "Tag")
     monat = formulas.summen_zeitraum(df_kwh, "Monat")
-    jahr = formulas.summen_zeitraum(df_kwh, "Jahr")
+    jahr_start = pd.Timestamp.now(tz=config.ZEITZONE).strftime("%Y-01-01")
+    jahr = db.summen_seit(jahr_start)
 
     logger.debug(
         "Energiebilanz: Tag=%.1f/%.1f | Monat=%.1f/%.1f | Jahr=%.1f/%.1f kWh (Erz/Verb)",

@@ -17,7 +17,7 @@ services:
     environment:
       - DATA_DIR=/app/data
     ports:
-      - "8501:8501"
+      - "8502:8501"
     volumes:
       - pv-data:/app/data
     restart: unless-stopped

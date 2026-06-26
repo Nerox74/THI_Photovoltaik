@@ -14,8 +14,18 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("DATA_DIR", Path(__file__).resolve().parent))
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-CSV_PATH = DATA_DIR / "cleaned_data.csv"
+
+# CSV_PATH = DATA_DIR / "cleaned_data.csv"
 LOG_FILE = PROJECT_ROOT / "projekt.log"
+
+
+DB_PATH = DATA_DIR / "pv_data.db"
+LOG_FILE = PROJECT_ROOT / "projekt.log"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ZEIT
+# ─────────────────────────────────────────────────────────────────────────────
+ZEITZONE = "Europe/Berlin"  # Rohdaten kommen in UTC; Tagesgrenzen/Anzeige lokal
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DATENSAMMLUNG (Collector / data_module.py)
@@ -32,7 +42,7 @@ RETENTION_TAGE = 90  # So lange bleiben Rohwerte in der DB; danach nur Tagesbila
 # ─────────────────────────────────────────────────────────────────────────────
 # BERECHNUNG (formulas.py / kpis.py)
 # ─────────────────────────────────────────────────────────────────────────────
-MAX_LUECKE_H = 1.5  # Intervalle > 1,5 h gelten als Datenlücke (Collector war aus)
+MAX_LUECKE_H = 0.5  # Intervalle > 1,5 h gelten als Datenlücke (Collector war aus)
 STROMPREIS = 0.39
 ANSCHAFFUNGSKOSTEN_PV_ANLAGE = 15_000.0
 MAX_TAGESERZEUGUNG_KWH = 50.0

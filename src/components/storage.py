@@ -48,7 +48,7 @@ LOKALE_ZEITZONE = "Europe/Berlin"
 # Bevorzugt aus config (Single Source of Truth), Fallback 90 Tage.
 RETENTION_TAGE = int(getattr(config, "RETENTION_TAGE", 90))
 
-DB_PATH = config.DATA_DIR / "pv_data.db"
+DB_PATH = config.DB_PATH
 
 _FELDNAMEN = ["collected_at", "pv_erzeugung_kw", "netz_wert_kw"]
 
@@ -113,10 +113,18 @@ class DataStorage:
                     datum          TEXT PRIMARY KEY,
                     kwh_erzeugt    REAL NOT NULL,
                     kwh_verbraucht REAL NOT NULL,
+                    kwh_eigen      REAL NOT NULL DEFAULT 0,
                     bilanz_kwh     REAL NOT NULL,
                     aktualisiert   TEXT NOT NULL
                 );
                 """)
+            # Self-Healing: kwh_eigen in einer älteren tagesbilanz nachrüsten
+            cols = [r[1] for r in conn.execute("PRAGMA table_info(tagesbilanz)")]
+            if "kwh_eigen" not in cols:
+                conn.execute(
+                    "ALTER TABLE tagesbilanz ADD COLUMN kwh_eigen REAL NOT NULL DEFAULT 0"
+                )
+                logger.info("Schema-Migration: Spalte kwh_eigen ergänzt")
         logger.info("DB-Schema bereit: %s", self.db_path)
 
     # ── Schreiben (Collector) ────────────────────────────────────────────────
@@ -168,6 +176,43 @@ class DataStorage:
             )
         return df
 
+    def summen_seit(self, start_datum: str) -> dict:
+        """Aggregiert Erzeugung/Verbrauch/Eigenverbrauch (kWh) ab ``start_datum``
+        (inkl.) aus der DAUERHAFTEN Tagesbilanz – überlebt das Pruning der
+        Rohdaten. ``start_datum`` als lokales 'YYYY-MM-DD'.
+
+        Gleiches dict-Format wie formulas.summen_zeitraum, damit die Anzeige
+        beide Quellen austauschbar nutzen kann.
+        """
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT COALESCE(SUM(kwh_erzeugt), 0.0), "
+                "       COALESCE(SUM(kwh_verbraucht), 0.0), "
+                "       COALESCE(SUM(kwh_eigen), 0.0) "
+                "FROM tagesbilanz WHERE datum >= ?",
+                (start_datum,),
+            ).fetchone()
+        erzeugt, verbraucht, eigen = float(row[0]), float(row[1]), float(row[2])
+        quote = (eigen / verbraucht * 100.0) if verbraucht > 0 else 0.0
+        return {
+            "erzeugt": erzeugt,
+            "verbraucht": verbraucht,
+            "eigen": eigen,
+            "netz": max(verbraucht - eigen, 0.0),
+            "quote": quote,
+        }
+
+    def max_tageserzeugung(self) -> float:
+        """Höchste je erreichte Tageserzeugung (kWh) aus der Tagesbilanz.
+
+        Selbst-kalibrierende Referenz für die Auslastungs-KPI. 0.0 wenn leer.
+        """
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT COALESCE(MAX(kwh_erzeugt), 0.0) FROM tagesbilanz"
+            ).fetchone()
+        return float(row[0])
+
     def gesamt_kwh_erzeugt(self) -> float:
         """Gesamte erzeugte kWh über die komplette Historie (aus tagesbilanz).
 
@@ -197,22 +242,32 @@ class DataStorage:
 
         df_kwh = formulas.umrechnung_in_kwh(df)
         df_kwh["datum"] = df_kwh["collected_at"].dt.tz_convert(LOKALE_ZEITZONE).dt.date
-        summen = df_kwh.groupby("datum")[["kwh_erzeugt", "kwh_verbraucht"]].sum()
+        summen = df_kwh.groupby("datum")[
+            ["kwh_erzeugt", "kwh_verbraucht", "kwh_pv_eigen"]
+        ].sum()
         summen["bilanz_kwh"] = summen["kwh_erzeugt"] - summen["kwh_verbraucht"]
 
         jetzt = datetime.now(timezone.utc).isoformat()
         rows = [
-            (str(datum), r.kwh_erzeugt, r.kwh_verbraucht, r.bilanz_kwh, jetzt)
+            (
+                str(datum),
+                r.kwh_erzeugt,
+                r.kwh_verbraucht,
+                r.kwh_pv_eigen,
+                r.bilanz_kwh,
+                jetzt,
+            )
             for datum, r in summen.iterrows()
         ]
         with self._connect() as conn:
             conn.executemany(
                 "INSERT INTO tagesbilanz "
-                "(datum, kwh_erzeugt, kwh_verbraucht, bilanz_kwh, aktualisiert) "
-                "VALUES (?, ?, ?, ?, ?) "
+                "(datum, kwh_erzeugt, kwh_verbraucht, kwh_eigen, bilanz_kwh, aktualisiert) "
+                "VALUES (?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(datum) DO UPDATE SET "
                 "  kwh_erzeugt=excluded.kwh_erzeugt, "
                 "  kwh_verbraucht=excluded.kwh_verbraucht, "
+                "  kwh_eigen=excluded.kwh_eigen, "
                 "  bilanz_kwh=excluded.bilanz_kwh, "
                 "  aktualisiert=excluded.aktualisiert",
                 rows,
@@ -237,8 +292,41 @@ class DataStorage:
             logger.info("Retention: %d Rohzeilen (vor %s) gelöscht", geloescht, cutoff)
         return geloescht
 
+    def normalize_timestamps(self) -> int:
+        """Einmalig: bestehende collected_at auf Sekunden-UTC vereinheitlichen.
 
-def migrate_csv(csv_path=config.CSV_PATH, db_path=DB_PATH) -> None:
+        Alt-Bestände wurden mit Mikrosekunden geschrieben, neue Inserts runden
+        auf Sekunden (_to_utc_iso). Verschiedene Strings -> PRIMARY KEY greift
+        nicht -> Dublettengefahr beim erneuten Pollen. Diese Methode schreibt
+        alle Rohzeilen einmalig im neuen Format zurück.
+
+        Returns: Anzahl tatsächlich geänderter Zeilen.
+        """
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT collected_at, pv_erzeugung_kw, netz_wert_kw FROM messungen"
+            ).fetchall()
+            if not rows:
+                return 0
+            normalisiert = {}
+            geaendert = 0
+            for ts, pv, netz in rows:
+                neu = _to_utc_iso(ts)
+                if neu != ts:
+                    geaendert += 1
+                normalisiert[neu] = (float(pv), float(netz))  # Kollision: später gewinnt
+            conn.execute("DELETE FROM messungen")
+            conn.executemany(
+                "INSERT INTO messungen (collected_at, pv_erzeugung_kw, netz_wert_kw) "
+                "VALUES (?, ?, ?)",
+                [(k, v[0], v[1]) for k, v in normalisiert.items()],
+            )
+        if geaendert:
+            logger.info("Timestamps normalisiert: %d Zeilen vereinheitlicht", geaendert)
+        return geaendert
+
+
+def migrate_csv(csv_path=config.DATA_DIR / "cleaned_data.csv", db_path=DB_PATH) -> None:
     """Einmalige Migration: liest die alte cleaned_data.csv in die DB."""
     storage = DataStorage(db_path)
     df = pd.read_csv(csv_path)
