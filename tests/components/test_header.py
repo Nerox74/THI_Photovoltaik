@@ -27,6 +27,7 @@ def test_uhrzeit_hat_format_hh_mm():
 
 def test_get_weather_data_fallback_wenn_api_nicht_erreichbar(monkeypatch):
     """Wenn die Wetter-API ausfällt, muss der Fallback zurückgegeben werden."""
+
     def fake_api_fehler(*args, **kwargs):
         raise Exception("API nicht erreichbar")
 

@@ -1,5 +1,4 @@
 import logging
-import os
 
 from logging_setup import setup_logging
 

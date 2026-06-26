@@ -7,27 +7,25 @@ Testet das Zusammenspiel der Module:
     → components.formulas.differenz_erzeugt_verbraucht
 """
 
-import pandas as pd
 import pytest
 
-from data_module import daten_bereinigen
+from components.formulas import differenz_erzeugt_verbraucht, umrechnung_in_kwh
 from components.storage import DataStorage
-from components.formulas import umrechnung_in_kwh, differenz_erzeugt_verbraucht
-
+from data_module import daten_bereinigen
 
 ROHDATEN_ERZEUGUNG = {
     "collected_at": "2026-06-19T10:00:00+00:00",
     "data": [
-        {"type": "generation",  "value": 5000.0},   # 5 kW
-        {"type": "consumption", "value": 2000.0},   # 2 kW
+        {"type": "generation", "value": 5000.0},  # 5 kW
+        {"type": "consumption", "value": 2000.0},  # 2 kW
     ],
 }
 
 ROHDATEN_NACHFOLGER = {
     "collected_at": "2026-06-19T11:00:00+00:00",
     "data": [
-        {"type": "generation",  "value": 6000.0},   # 6 kW
-        {"type": "consumption", "value": 3000.0},   # 3 kW
+        {"type": "generation", "value": 6000.0},  # 6 kW
+        {"type": "consumption", "value": 3000.0},  # 3 kW
     ],
 }
 
@@ -41,6 +39,7 @@ def temp_db(tmp_path):
 # ─────────────────────────────────────────────────────────────────────────────
 # Test 1: Rohdaten → Bereinigung → Speicherung
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_pipeline_rohdaten_bis_datenbank(temp_db):
     """Daten vom Server werden bereinigt und landen korrekt in der DB."""
@@ -58,7 +57,7 @@ def test_pipeline_rohdaten_bis_datenbank(temp_db):
 def test_pipeline_doppelter_zeitstempel_wird_ignoriert(temp_db):
     """Derselbe Zeitstempel darf nicht zweimal eingefügt werden (PRIMARY KEY)."""
     zeile = daten_bereinigen(ROHDATEN_ERZEUGUNG)
-    first  = temp_db.insert_row(zeile)
+    first = temp_db.insert_row(zeile)
     second = temp_db.insert_row(zeile)
 
     assert first is True
@@ -69,6 +68,7 @@ def test_pipeline_doppelter_zeitstempel_wird_ignoriert(temp_db):
 # ─────────────────────────────────────────────────────────────────────────────
 # Test 2: Datenbank → kWh-Umrechnung
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_pipeline_datenbank_zu_kwh(temp_db):
     """Zwei gespeicherte Messpunkte werden korrekt in kWh umgerechnet."""
@@ -88,6 +88,7 @@ def test_pipeline_datenbank_zu_kwh(temp_db):
 # Test 3: kWh → Tagesbilanz
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_pipeline_kwh_zu_tagesbilanz(temp_db):
     """Aus den gespeicherten Rohdaten wird eine korrekte Tagesbilanz berechnet."""
     for rohdaten in [ROHDATEN_ERZEUGUNG, ROHDATEN_NACHFOLGER]:
@@ -104,6 +105,7 @@ def test_pipeline_kwh_zu_tagesbilanz(temp_db):
 # ─────────────────────────────────────────────────────────────────────────────
 # Test 4: Rollup-Tagesbilanz → Gesamt-kWh überlebt Retention
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_pipeline_gesamt_kwh_ueberlebt_prune(temp_db):
     """Nach dem Prunen (Löschen alter Rohzeilen) bleibt gesamt_kwh_erzeugt erhalten."""

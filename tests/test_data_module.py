@@ -1,7 +1,7 @@
 """Unittests für data_module.py."""
 
 import data_module
-from data_module import daten_bereinigen, daten_abrufen
+from data_module import daten_abrufen, daten_bereinigen
 
 # Realistisches Beispiel direkt vom Server
 BEISPIEL_ROHDATEN = {
@@ -36,6 +36,7 @@ BEISPIEL_ROHDATEN = {
 # daten_bereinigen
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_daten_bereinigen_pv_erzeugung_wird_summiert_und_in_kw_umgerechnet():
     """Alle 'generation'-Werte werden summiert und von W → kW umgerechnet."""
     zeile = daten_bereinigen(BEISPIEL_ROHDATEN)
@@ -55,7 +56,12 @@ def test_daten_bereinigen_uhrzeit_hat_format_hh_mm():
 
 def test_daten_bereinigen_hat_alle_pflichtfelder():
     zeile = daten_bereinigen(BEISPIEL_ROHDATEN)
-    assert set(zeile.keys()) == {"collected_at", "uhrzeit", "pv_erzeugung_kw", "netz_wert_kw"}
+    assert set(zeile.keys()) == {
+        "collected_at",
+        "uhrzeit",
+        "pv_erzeugung_kw",
+        "netz_wert_kw",
+    }
 
 
 def test_daten_bereinigen_gibt_dict_zurueck():
@@ -69,11 +75,11 @@ def test_daten_bereinigen_nur_consumption_typen_in_netz():
         "collected_at": "2026-06-19T10:00:00+00:00",
         "data": [
             {"type": "consumption", "value": 2000.0},
-            {"type": "generation",  "value": 1000.0},
+            {"type": "generation", "value": 1000.0},
         ],
     }
     zeile = daten_bereinigen(rohdaten)
-    assert zeile["netz_wert_kw"] == 2.0   # nur 2000 W → 2.0 kW
+    assert zeile["netz_wert_kw"] == 2.0  # nur 2000 W → 2.0 kW
 
 
 def test_daten_bereinigen_ohne_generation_ergibt_null_kw():
@@ -90,8 +96,10 @@ def test_daten_bereinigen_ohne_generation_ergibt_null_kw():
 # daten_abrufen (mit Mock, kein echter Server nötig)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class FakeResponse:
     """Simuliert eine echte requests-Antwort."""
+
     def raise_for_status(self):
         pass
 
@@ -113,13 +121,16 @@ def test_daten_abrufen_gibt_dict_zurueck(monkeypatch):
 
 def test_daten_abrufen_wirft_exception_bei_http_fehler(monkeypatch):
     """Bei einem HTTP-Fehler (raise_for_status) muss eine Exception weitergegeben werden."""
+
     class BadResponse:
         def raise_for_status(self):
             raise Exception("HTTP 500")
+
         def json(self):
             return {}
 
     monkeypatch.setattr(data_module.requests, "get", lambda *a, **k: BadResponse())
     import pytest
+
     with pytest.raises(Exception):
         daten_abrufen()
