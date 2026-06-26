@@ -182,5 +182,11 @@ Alle technischen Parameter (keine Secrets) sind in `src/config.py` gebündelt:
 
 ## Aufgabenverteilung
 
+```bash
+Henning: Makefile, Docker, Ordnerstruktur
+Michi: KPIs, Ordnerstruktur
+Nils: Logging, SQL, Ordnerstruktur
+```
+
 
 
