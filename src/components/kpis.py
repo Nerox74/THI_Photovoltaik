@@ -1,5 +1,7 @@
 """Zentrale Zahlen und Fakten, die im Streamlit-Dashboard angezeigt werden."""
 
+from __future__ import annotations
+
 import logging
 import math
 

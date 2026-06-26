@@ -21,7 +21,7 @@ LOG_FILE = PROJECT_ROOT / "projekt.log"
 # DATENSAMMLUNG (Collector / data_module.py)
 # ─────────────────────────────────────────────────────────────────────────────
 INTERVALL_SEKUNDEN = 5
-MAX_WAIT_TIME = 7200
+MAX_WAIT_TIME = 300
 REQUEST_TIMEOUT = 30
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -21,8 +21,6 @@ services:
     volumes:
       - pv-data:/app/data
     restart: unless-stopped
-    depends_on:
-      - collector
 
 volumes:
   pv-data:
