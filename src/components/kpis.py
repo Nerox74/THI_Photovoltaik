@@ -362,7 +362,7 @@ def _momentan_block(icon: str, label: str, wert: str, farbe: str) -> str:
 def show_momentan(df: pd.DataFrame) -> None:
     """Live-Strip: Momentanerzeugung, -verbrauch und aktuelle Netto-Leistung."""
     df = df.copy()
-    df["collected_at"] = pd.to_datetime(df["collected_at"], utc=True)
+    df["collected_at"] = pd.to_datetime(df["collected_at"], format="ISO8601", utc=True)
     letzte = df.sort_values("collected_at").iloc[-1]
 
     mom_erz = float(letzte["pv_erzeugung_kw"])

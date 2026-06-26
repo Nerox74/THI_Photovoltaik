@@ -56,7 +56,7 @@ def _leere_figur(text: str):
 def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = None):
     """Zeitverlauf von Erzeugung und Verbrauch (Leistung in kW) für den heutigen Tag."""
     df = df.copy()
-    df["collected_at"] = pd.to_datetime(df["collected_at"], utc=True)
+    df["collected_at"] = pd.to_datetime(df["collected_at"], format="ISO8601", utc=True)
     df["lokal"] = df["collected_at"].dt.tz_convert("Europe/Berlin")
 
     heute = pd.Timestamp.now(tz="Europe/Berlin").normalize()

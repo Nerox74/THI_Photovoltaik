@@ -26,7 +26,7 @@ def umrechnung_in_kwh(df: pd.DataFrame) -> pd.DataFrame:
         kwh_pv_eigen    → direkt aus PV gedeckter Verbrauch (kWh) = ∫ min(Erz., Verbr.)
     """
     df = df.copy()
-    df["collected_at"] = pd.to_datetime(df["collected_at"], utc=True)
+    df["collected_at"] = pd.to_datetime(df["collected_at"], format="ISO8601", utc=True)
     df = df.sort_values("collected_at").reset_index(drop=True)
 
     df["delta_h"] = df["collected_at"].diff().dt.total_seconds().shift(-1) / 3600
