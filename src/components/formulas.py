@@ -31,14 +31,19 @@ def umrechnung_in_kwh(df: pd.DataFrame) -> pd.DataFrame:
 
     df["delta_h"] = df["collected_at"].diff().dt.total_seconds().shift(-1) / 3600
 
-    anzahl_luecken = int((df["delta_h"] > config.MAX_LUECKE_H).sum())
+    luecken_maske = df["delta_h"] > config.MAX_LUECKE_H
+    luecken = df.loc[luecken_maske, ["collected_at", "delta_h"]].copy()
+    luecken["ende"] = df["collected_at"].shift(-1)
+
+    anzahl_luecken = int(luecken_maske.sum())
     if anzahl_luecken:
         logger.warning(
-            "%d Datenlücken übersprungen (>%.0f Min)",
+            "%d Datenlücken übersprungen (>%.0f Sek)",
             anzahl_luecken,
-            config.MAX_LUECKE_H * 60,
+            config.MAX_LUECKE_H * 3600,
         )
-    df.loc[df["delta_h"] > config.MAX_LUECKE_H, "delta_h"] = 0
+
+    df.loc[luecken_maske, "delta_h"] = 0
 
     df["kwh_erzeugt"] = (
         (df["pv_erzeugung_kw"] + df["pv_erzeugung_kw"].shift(-1)) / 2 * df["delta_h"]
@@ -51,7 +56,7 @@ def umrechnung_in_kwh(df: pd.DataFrame) -> pd.DataFrame:
     eigen_kw = df[["pv_erzeugung_kw", "netz_wert_kw"]].min(axis=1)
     df["kwh_pv_eigen"] = (eigen_kw + eigen_kw.shift(-1)) / 2 * df["delta_h"]
 
-    return df
+    return df, luecken
 
 
 def _zeitraum_start_utc(zeitraum: str) -> pd.Timestamp:
@@ -108,7 +113,7 @@ def differenz_erzeugt_verbraucht(df: pd.DataFrame) -> pd.Series:
     Positiv (+) → Überschuss, Negativ (−) → Defizit.
     Rückgabe: pd.Series, Index = Datum, Values = Differenz in kWh.
     """
-    df = umrechnung_in_kwh(df)
+    df, _ = umrechnung_in_kwh(df)
     df["datum"] = df["collected_at"].dt.tz_convert("Europe/Berlin").dt.date
 
     summen = df.groupby("datum")[["kwh_erzeugt", "kwh_verbraucht"]].sum()

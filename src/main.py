@@ -3,6 +3,7 @@ Streamlit die Weboberfläche zusammen."""
 
 import logging
 
+import componets.formulas as formulas
 import matplotlib.pyplot as plt
 import streamlit as st
 
@@ -53,7 +54,8 @@ def show_dashboard_content() -> None:
     st.divider()
 
     # ── Zeitverlauf des aktuellen Tages ─────────────────────────────────────
-    fig_verlauf = create_chart_tagesverlauf(df)
+    df_kwh, luecken_heute = formulas.umrechnung_in_kwh(df)
+    fig_verlauf = create_chart_tagesverlauf(df, luecken_heute)
     st.pyplot(fig_verlauf)
     plt.close(fig_verlauf)
 

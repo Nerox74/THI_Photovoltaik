@@ -53,7 +53,7 @@ def _leere_figur(text: str):
     return fig
 
 
-def create_chart_tagesverlauf(df: pd.DataFrame):
+def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = None):
     """Zeitverlauf von Erzeugung und Verbrauch (Leistung in kW) für den heutigen Tag."""
     df = df.copy()
     df["collected_at"] = pd.to_datetime(df["collected_at"], utc=True)
@@ -72,6 +72,39 @@ def create_chart_tagesverlauf(df: pd.DataFrame):
     ax.set_facecolor(config.PANEL_BG)
     ax.yaxis.grid(True, color="#2a3045", linewidth=0.5, linestyle="--", zorder=0)
     ax.set_axisbelow(True)
+
+    # ── Datenlücken als graue Fläche einzeichnen ────────────────────────────────
+    if luecken is not None and not luecken.empty:
+        for _, luecke in luecken.iterrows():
+            start_x = (
+                pd.Timestamp(luecke["collected_at"])
+                .tz_convert("Europe/Berlin")
+                .tz_localize(None)
+            )
+            ende_x = (
+                pd.Timestamp(luecke["ende"]).tz_convert("Europe/Berlin").tz_localize(None)
+            )
+            ax.axvspan(
+                start_x,
+                ende_x,
+                alpha=0.18,
+                color="#888888",
+                zorder=2,
+                label="_nolegend_",
+            )
+            # Beschriftung nur wenn Lücke > 5 Minuten (sonst zu eng)
+            dauer_min = (ende_x - start_x).seconds / 60
+            if dauer_min > 5:
+                ax.text(
+                    start_x + (ende_x - start_x) / 2,
+                    ax.get_ylim()[1] * 0.92,
+                    f"⚠ {dauer_min:.0f} Min.\nkeine Daten",
+                    ha="center",
+                    va="top",
+                    color=config.TEXT_GEDIMMT,
+                    fontsize=5.5,
+                    linespacing=1.4,
+                )
 
     ax.fill_between(
         x,
@@ -119,7 +152,18 @@ def create_chart_tagesverlauf(df: pd.DataFrame):
 
     for spine in ax.spines.values():
         spine.set_visible(False)
+    legende_handles = [
+        mpatches.Patch(color=config.FARBE_UEBERSCHUSS, alpha=0.8, label="Erzeugung (kW)"),
+        mpatches.Patch(color=config.FARBE_DEFIZIT, alpha=0.8, label="Verbrauch (kW)"),
+    ]
+    if luecken is not None and not luecken.empty:
+        legende_handles.append(
+            mpatches.Patch(
+                color="#888888", alpha=0.4, label=f"{len(luecken)} Datenlücke(n)"
+            )
+        )
     ax.legend(
+        handles=legende_handles,
         facecolor=config.PANEL_BG,
         edgecolor="none",
         labelcolor="white",

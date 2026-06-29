@@ -244,7 +244,7 @@ def show_kpis(df: pd.DataFrame, kwh_gesamt_alltime: float | None = None) -> None
                             (aus DataStorage.gesamt_kwh_erzeugt).
                             Falls None, Fallback auf lokale Rohdaten.
     """
-    df_kwh = formulas.umrechnung_in_kwh(df)
+    df_kwh, _ = formulas.umrechnung_in_kwh(df)
 
     maske_heute = df_kwh["collected_at"] >= (
         pd.Timestamp.now(tz="UTC")
@@ -453,7 +453,7 @@ def show_energiebilanz(df: pd.DataFrame, db) -> None:
     Tag & Monat aus den Live-Rohdaten (innerhalb der Retention, sekundengenau);
     Jahr aus der dauerhaften Tagesbilanz, damit es das 90-Tage-Pruning überlebt.
     """
-    df_kwh = formulas.umrechnung_in_kwh(df)
+    df_kwh, _ = formulas.umrechnung_in_kwh(df)
     tag = formulas.summen_zeitraum(df_kwh, "Tag")
     monat = formulas.summen_zeitraum(df_kwh, "Monat")
     jahr_start = pd.Timestamp.now(tz=config.ZEITZONE).strftime("%Y-01-01")
