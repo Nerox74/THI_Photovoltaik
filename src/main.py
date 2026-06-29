@@ -3,10 +3,10 @@ Streamlit die Weboberfläche zusammen."""
 
 import logging
 
-import componets.formulas as formulas
 import matplotlib.pyplot as plt
 import streamlit as st
 
+import components.formulas as formulas
 import config
 from components.charts import create_chart_tagesverlauf, draw_calendar_3monate
 from components.formulas import differenz_erzeugt_verbraucht
