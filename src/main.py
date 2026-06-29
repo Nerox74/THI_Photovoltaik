@@ -21,6 +21,7 @@ if not logging.getLogger().handlers:
 
 logger = logging.getLogger(__name__)
 logger.info("Die App wurde gestartet")
+logger.info("Dashboard erreichbar unter: http://localhost:8502")
 
 
 @st.fragment(run_every=60)

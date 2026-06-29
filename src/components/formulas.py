@@ -34,6 +34,7 @@ def umrechnung_in_kwh(df: pd.DataFrame) -> pd.DataFrame:
     luecken_maske = df["delta_h"] > config.MAX_LUECKE_H
     luecken = df.loc[luecken_maske, ["collected_at", "delta_h"]].copy()
     luecken["ende"] = df["collected_at"].shift(-1)
+    luecken = luecken.dropna(subset=["ende"])  # letzte Zeile hat kein Ende → raus
 
     anzahl_luecken = int(luecken_maske.sum())
     if anzahl_luecken:
