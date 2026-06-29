@@ -16,11 +16,10 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # CSV_PATH = DATA_DIR / "cleaned_data.csv"
-LOG_FILE = PROJECT_ROOT / "projekt.log"
 
 
 DB_PATH = DATA_DIR / "pv_data.db"
-LOG_FILE = PROJECT_ROOT / "projekt.log"
+LOG_FILE = DATA_DIR / "projekt.log"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ZEIT
