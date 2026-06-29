@@ -3,7 +3,6 @@ Streamlit die Weboberfläche zusammen."""
 
 import logging
 
-import componets.formulas as formulas
 import matplotlib.pyplot as plt
 import streamlit as st
 
