@@ -13,6 +13,7 @@ from components.charts import (
     draw_calendar_3monate,
 )
 
+
 def baue_heute_df(pv=2.0, netz=4.0):
     """Zwei Messpunkte am heutigen Mittag (robust gegen die Mitternachts-Grenze)."""
     mittag = pd.Timestamp.now(tz="Europe/Berlin").normalize() + pd.Timedelta(hours=12)
@@ -94,6 +95,7 @@ def test_tagesverlauf_ohne_heutige_daten_gibt_platzhalter():
     assert isinstance(fig, plt.Figure)
     assert len(fig.axes[0].lines) == 0
 
+
 def test_tagesverlauf_leerer_df_gibt_figure_zurueck():
     fig = create_chart_tagesverlauf(baue_leeren_df())
     assert isinstance(fig, plt.Figure)
@@ -122,6 +124,7 @@ def test_kalender_leere_series_gibt_figure_zurueck():
     fig = draw_calendar_3monate(leer, unit="kWh")
     assert isinstance(fig, plt.Figure)
     plt.close(fig)
+
 
 def test_pie_pv_quote_zeigt_zwei_segmente():
     """Mit Eigen- und Netzanteil entstehen genau zwei Tortenstücke."""
