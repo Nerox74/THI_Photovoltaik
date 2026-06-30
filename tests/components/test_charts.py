@@ -70,10 +70,19 @@ def test_tagesverlauf_titel():
 
 def test_tagesverlauf_ohne_heutige_daten_gibt_platzhalter():
     """Daten von gestern → Platzhalter-Figur ohne Linien, kein Crash."""
-    gestern = pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=1)
+    # Gestern um 10:00 Berlin als FESTER Anker – so rutscht auch "gestern + 1h"
+    # nie über Mitternacht in den heutigen Tag (sonst zeitabhängig/flaky).
+    gestern_vormittag = (
+        pd.Timestamp.now(tz="Europe/Berlin").normalize()
+        - pd.Timedelta(days=1)
+        + pd.Timedelta(hours=10)
+    )
     df = pd.DataFrame(
         {
-            "collected_at": [gestern, gestern + pd.Timedelta(hours=1)],
+            "collected_at": [
+                gestern_vormittag.tz_convert("UTC"),
+                (gestern_vormittag + pd.Timedelta(hours=1)).tz_convert("UTC"),
+            ],
             "pv_erzeugung_kw": [1.0, 1.0],
             "netz_wert_kw": [2.0, 2.0],
         }
@@ -81,8 +90,6 @@ def test_tagesverlauf_ohne_heutige_daten_gibt_platzhalter():
     fig = create_chart_tagesverlauf(df)
     assert isinstance(fig, plt.Figure)
     assert len(fig.axes[0].lines) == 0
-    plt.close(fig)
-
 
 def test_tagesverlauf_leerer_df_gibt_figure_zurueck():
     fig = create_chart_tagesverlauf(baue_leeren_df())
