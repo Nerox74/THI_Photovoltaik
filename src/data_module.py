@@ -77,6 +77,14 @@ def automatische_abfrage() -> None:
     aktuelle_wartezeit = config.INTERVALL_SEKUNDEN
     letzte_wartung = time.monotonic()
 
+    # Einmal direkt beim Start auffrischen, damit die Tagesbilanz aktuell ist,
+    # auch wenn der Collector nie eine volle Stunde am Stück läuft.
+    try:
+        anzahl = db.rollup_tagesbilanz()
+        logger.info("Tagesbilanz beim Start aufgefrischt (%d Tage).", anzahl)
+    except Exception as fehler:
+        logger.error("Rollup beim Start fehlgeschlagen: %s", fehler)
+
     while True:
         try:
             rohdaten = daten_abrufen()
