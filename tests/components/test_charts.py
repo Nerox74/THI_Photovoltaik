@@ -7,8 +7,11 @@ matplotlib.use("Agg")  # kein Bildschirm nötig, muss vor plt-Import stehen
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from components.charts import create_chart_tagesverlauf, draw_calendar_3monate
-
+from components.charts import (
+    create_chart_tagesverlauf,
+    create_pie_pv_quote,
+    draw_calendar_3monate,
+)
 
 def baue_heute_df(pv=2.0, netz=4.0):
     """Zwei Messpunkte am heutigen Mittag (robust gegen die Mitternachts-Grenze)."""
@@ -119,3 +122,19 @@ def test_kalender_leere_series_gibt_figure_zurueck():
     fig = draw_calendar_3monate(leer, unit="kWh")
     assert isinstance(fig, plt.Figure)
     plt.close(fig)
+
+def test_pie_pv_quote_zeigt_zwei_segmente():
+    """Mit Eigen- und Netzanteil entstehen genau zwei Tortenstücke."""
+    summen = {"eigen": 3.0, "netz": 1.0, "quote": 75.0}
+    fig = create_pie_pv_quote(summen, "Heute")
+    assert isinstance(fig, plt.Figure)
+    # Ein Pie erzeugt pro Segment ein Wedge-Patch
+    assert len(fig.axes[0].patches) == 2
+
+
+def test_pie_pv_quote_ohne_daten_gibt_platzhalter():
+    """Ohne Verbrauch (eigen + netz = 0) kommt die Platzhalter-Figur ohne Segmente."""
+    summen = {"eigen": 0.0, "netz": 0.0, "quote": 0.0}
+    fig = create_pie_pv_quote(summen, "Heute")
+    assert isinstance(fig, plt.Figure)
+    assert len(fig.axes[0].patches) == 0
