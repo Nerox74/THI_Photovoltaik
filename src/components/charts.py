@@ -52,6 +52,23 @@ def _leere_figur(text: str):
     ax.axis("off")
     return fig
 
+def _mit_luecken_brechen(x, y, max_luecke_h):
+    """Bricht die Linie an Datenlücken: fügt einen NaN-Punkt ein, wo der Abstand
+    zweier Messpunkte größer als max_luecke_h (Stunden) ist. matplotlib zeichnet
+    über NaN keine Linie -> keine falsche Interpolation über messfreie Zeiträume.
+    """
+    x = list(x)
+    y = list(y)
+    aus_x, aus_y = [], []
+    for i in range(len(x)):
+        aus_x.append(x[i])
+        aus_y.append(y[i])
+        if i < len(x) - 1:
+            luecke_h = (x[i + 1] - x[i]).total_seconds() / 3600
+            if luecke_h > max_luecke_h:
+                aus_x.append(x[i] + (x[i + 1] - x[i]) / 2)
+                aus_y.append(float("nan"))  # Trennpunkt -> Linie bricht hier
+    return aus_x, aus_y
 
 def create_chart_tagesverlauf(df: pd.DataFrame):
     """Zeitverlauf von Erzeugung und Verbrauch (Leistung in kW) für den heutigen Tag."""
@@ -68,24 +85,20 @@ def create_chart_tagesverlauf(df: pd.DataFrame):
 
     x = df_heute["lokal"].dt.tz_localize(None)  # naive Lokalzeit für die x-Achse
 
+    # Linien an Datenlücken (> MAX_LUECKE_H) unterbrechen, statt zu interpolieren
+    x_b, y_erz = _mit_luecken_brechen(x, df_heute["pv_erzeugung_kw"], config.MAX_LUECKE_H)
+    _, y_verb = _mit_luecken_brechen(x, df_heute["netz_wert_kw"], config.MAX_LUECKE_H)
+
     fig, ax = plt.subplots(figsize=(7, 3.4), facecolor=config.CHART_BG)
     ax.set_facecolor(config.PANEL_BG)
     ax.yaxis.grid(True, color="#2a3045", linewidth=0.5, linestyle="--", zorder=0)
     ax.set_axisbelow(True)
 
-    ax.fill_between(
-        x,
-        df_heute["pv_erzeugung_kw"],
-        alpha=0.20,
-        color=config.FARBE_UEBERSCHUSS,
-        zorder=1,
-    )
-    ax.fill_between(
-        x, df_heute["netz_wert_kw"], alpha=0.15, color=config.FARBE_DEFIZIT, zorder=1
-    )
+    ax.fill_between(x_b, y_erz, alpha=0.20, color=config.FARBE_UEBERSCHUSS, zorder=1)
+    ax.fill_between(x_b, y_verb, alpha=0.15, color=config.FARBE_DEFIZIT, zorder=1)
     ax.plot(
-        x,
-        df_heute["pv_erzeugung_kw"],
+        x_b,
+        y_erz,
         color=config.FARBE_UEBERSCHUSS,
         linewidth=2.0,
         marker="o",
@@ -94,8 +107,8 @@ def create_chart_tagesverlauf(df: pd.DataFrame):
         zorder=3,
     )
     ax.plot(
-        x,
-        df_heute["netz_wert_kw"],
+        x_b,
+        y_verb,
         color=config.FARBE_DEFIZIT,
         linewidth=2.0,
         marker="o",
