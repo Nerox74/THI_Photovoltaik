@@ -19,5 +19,6 @@ __pycache__/
 .cache.sqlite
 
 *.db
+*.db.bak
 *.db-wal
 *.db-shm
