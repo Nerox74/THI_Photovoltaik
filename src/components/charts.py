@@ -52,6 +52,7 @@ def _leere_figur(text: str):
     ax.axis("off")
     return fig
 
+
 def _mit_luecken_brechen(x, y, max_luecke_h):
     """Bricht die Linie an Datenlücken: fügt einen NaN-Punkt ein, wo der Abstand
     zweier Messpunkte größer als max_luecke_h (Stunden) ist. matplotlib zeichnet
@@ -69,6 +70,7 @@ def _mit_luecken_brechen(x, y, max_luecke_h):
                 aus_x.append(x[i] + (x[i + 1] - x[i]) / 2)
                 aus_y.append(float("nan"))  # Trennpunkt -> Linie bricht hier
     return aus_x, aus_y
+
 
 def create_chart_tagesverlauf(df: pd.DataFrame):
     """Zeitverlauf von Erzeugung und Verbrauch (Leistung in kW) für den heutigen Tag."""
@@ -144,6 +146,7 @@ def create_chart_tagesverlauf(df: pd.DataFrame):
     plt.tight_layout(pad=1.2)
     return fig
 
+
 def create_pie_pv_quote(summen: dict, titel: str):
     """Tortendiagramm (Donut): Anteil des Verbrauchs aus PV (eigen) vs. Netzbezug.
 
@@ -165,9 +168,14 @@ def create_pie_pv_quote(summen: dict, titel: str):
         wedgeprops={"width": 0.42, "edgecolor": config.CHART_BG, "linewidth": 1.5},
     )
     ax.text(
-        0, 0, f"{quote:.0f}%",
-        ha="center", va="center",
-        color="white", fontsize=15, fontweight="bold",
+        0,
+        0,
+        f"{quote:.0f}%",
+        ha="center",
+        va="center",
+        color="white",
+        fontsize=15,
+        fontweight="bold",
     )
     ax.set_title(titel, color="white", fontsize=9, fontweight="bold", pad=8)
     ax.legend(
@@ -182,6 +190,7 @@ def create_pie_pv_quote(summen: dict, titel: str):
         framealpha=0.0,
     )
     return fig
+
 
 def draw_calendar_3monate(data: pd.Series, unit: str):
     """Zeichnet die letzten 3 Monate nebeneinander als eine breite Kalender-Grafik."""
