@@ -144,6 +144,44 @@ def create_chart_tagesverlauf(df: pd.DataFrame):
     plt.tight_layout(pad=1.2)
     return fig
 
+def create_pie_pv_quote(summen: dict, titel: str):
+    """Tortendiagramm (Donut): Anteil des Verbrauchs aus PV (eigen) vs. Netzbezug.
+
+    Erwartet ein Summen-dict (wie formulas.summen_zeitraum / storage.summen_seit)
+    mit den Schlüsseln 'eigen', 'netz', 'quote'.
+    """
+    eigen = summen["eigen"]
+    netz = summen["netz"]
+    quote = summen["quote"]
+    if eigen + netz <= 0:
+        return _leere_figur(f"{titel}: keine Daten")
+
+    fig, ax = plt.subplots(figsize=(3, 3), facecolor=config.CHART_BG)
+    ax.pie(
+        [eigen, netz],
+        colors=[config.FARBE_UEBERSCHUSS, config.FARBE_DEFIZIT],
+        startangle=90,
+        counterclock=False,
+        wedgeprops={"width": 0.42, "edgecolor": config.CHART_BG, "linewidth": 1.5},
+    )
+    ax.text(
+        0, 0, f"{quote:.0f}%",
+        ha="center", va="center",
+        color="white", fontsize=15, fontweight="bold",
+    )
+    ax.set_title(titel, color="white", fontsize=9, fontweight="bold", pad=8)
+    ax.legend(
+        ["aus PV", "aus Netz"],
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.08),
+        ncol=2,
+        facecolor=config.PANEL_BG,
+        edgecolor="none",
+        labelcolor="white",
+        fontsize=7,
+        framealpha=0.0,
+    )
+    return fig
 
 def draw_calendar_3monate(data: pd.Series, unit: str):
     """Zeichnet die letzten 3 Monate nebeneinander als eine breite Kalender-Grafik."""

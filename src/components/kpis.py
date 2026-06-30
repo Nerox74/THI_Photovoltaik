@@ -9,7 +9,7 @@ import pandas as pd
 import streamlit as st
 
 import config
-from components import formulas
+from components import charts, formulas
 
 logger = logging.getLogger(__name__)
 
@@ -481,3 +481,15 @@ def show_energiebilanz(df: pd.DataFrame, db) -> None:
         + "</div></div>",
         unsafe_allow_html=True,
     )
+    # ── Tortendiagramme: PV-Quote (Eigenverbrauch vs. Netzbezug) je Zeitraum ──
+    st.markdown(
+        f'<div style="font-size:13px;color:{config.TEXT_GEDIMMT};'
+        f'margin:18px 0 4px 0;">📊 PV-Quote – Anteil Eigenverbrauch am Verbrauch</div>',
+        unsafe_allow_html=True,
+    )
+    spalten = st.columns(3)
+    for spalte, (titel, summen) in zip(
+        spalten, [("Heute", tag), ("Dieser Monat", monat), ("Dieses Jahr", jahr)]
+    ):
+        with spalte:
+            st.pyplot(charts.create_pie_pv_quote(summen, titel))
