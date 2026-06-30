@@ -15,10 +15,16 @@ from components.kpis import (
 
 
 def baue_test_df(stunden_versatz: list[int] | None = None) -> pd.DataFrame:
-    """Erstellt einen DataFrame mit Messpunkten relativ zu jetzt."""
+    """Erstellt einen DataFrame mit Messpunkten relativ zum heutigen Mittag.
+
+    Anker ist 12:00 Berlin (statt 'jetzt'), damit der Test nicht nachts oder
+    zum Monats-/Jahreswechsel über die Tagesgrenze in den Vortag kippt.
+    """
     if stunden_versatz is None:
         stunden_versatz = [-1, -2]
-    jetzt = pd.Timestamp.now(tz="UTC")
+    jetzt = (
+        pd.Timestamp.now(tz="Europe/Berlin").normalize() + pd.Timedelta(hours=12)
+    ).tz_convert("UTC")
     return pd.DataFrame(
         {
             "collected_at": [jetzt + pd.Timedelta(hours=h) for h in stunden_versatz],

@@ -1,4 +1,4 @@
-"""Stellt eine Verbindung zu Prometheus her, holt die Rohdaten, bereinigt sie und
+"""Stellt eine Verbindung zum Server der PV-Anlage her, holt die Rohdaten, bereinigt sie und
 schreibt die bereinigten Zeilen in die SQLite-Datenbank."""
 
 import logging
