@@ -107,6 +107,48 @@ def summen_zeitraum(df_kwh: pd.DataFrame, zeitraum: str) -> dict:
     }
 
 
+def _alter_text(alter_sekunden: float) -> str:
+    """Formatiert eine Sekundenzahl als lesbaren 'vor X' Text (Sek/Min/Std)."""
+    alter_sekunden = max(alter_sekunden, 0.0)
+    if alter_sekunden < 60:
+        return f"vor {alter_sekunden:.0f} Sek."
+    minuten = alter_sekunden / 60
+    if minuten < 60:
+        return f"vor {minuten:.0f} Min."
+    stunden = minuten / 60
+    return f"vor {stunden:.1f} Std."
+
+
+def daten_frische(
+    letzter_zeitstempel: pd.Timestamp, jetzt: pd.Timestamp | None = None
+) -> dict:
+    """Prüft, wie alt der letzte Messwert ist und ob er noch als 'live' gilt.
+
+    Schwelle: config.DATENFRISCHE_SEKUNDEN (Default 60s). Darüber gilt die
+    Anzeige als veraltet – Live-Strip, KPIs und Charts sollen dann statt des
+    letzten Werts einen "keine aktuellen Daten"-Hinweis zeigen, statt ihn
+    stillschweigend als aktuell auszugeben.
+
+    Args:
+        letzter_zeitstempel: Zeitstempel des letzten Messwerts (tz-aware).
+        jetzt: Referenzzeitpunkt (Default: aktuelle Zeit). Für Tests überschreibbar.
+
+    Returns dict:
+        ist_frisch      → True, wenn Alter <= DATENFRISCHE_SEKUNDEN
+        alter_sekunden  → Alter des letzten Messwerts in Sekunden
+        alter_text      → Lesbarer Text ("vor 12 Sek.", "vor 3 Min.", ...)
+    """
+    if jetzt is None:
+        jetzt = pd.Timestamp.now(tz="UTC")
+    alter_sekunden = (jetzt - letzter_zeitstempel).total_seconds()
+    ist_frisch = alter_sekunden <= config.DATENFRISCHE_SEKUNDEN
+    return {
+        "ist_frisch": ist_frisch,
+        "alter_sekunden": alter_sekunden,
+        "alter_text": _alter_text(alter_sekunden),
+    }
+
+
 def differenz_erzeugt_verbraucht(df: pd.DataFrame) -> pd.Series:
     """
     Berechnet die tägliche Bilanz (Erzeugung − Verbrauch) in kWh.

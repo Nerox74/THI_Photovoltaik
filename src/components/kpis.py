@@ -346,6 +346,8 @@ _PULSE_CSS = """
   border-radius:50%; background:#2ecc71; margin-right:7px; }
 .pv-live-dot::after { content:''; position:absolute; left:0; top:0; width:9px;
   height:9px; border-radius:50%; background:#2ecc71; animation:pv-pulse 1.8s infinite; }
+.pv-stale-dot { display:inline-block; width:9px; height:9px;
+  border-radius:50%; background:#666688; margin-right:7px; }
 </style>
 """
 
@@ -360,7 +362,13 @@ def _momentan_block(icon: str, label: str, wert: str, farbe: str) -> str:
 
 
 def show_momentan(df: pd.DataFrame) -> None:
-    """Live-Strip: Momentanerzeugung, -verbrauch und aktuelle Netto-Leistung."""
+    """Live-Strip: Momentanerzeugung, -verbrauch und aktuelle Netto-Leistung.
+
+    Zeigt "LIVE" nur, solange der letzte Messwert nicht älter als
+    config.DATENFRISCHE_SEKUNDEN ist. Danach wird auf "KEINE AKTUELLEN DATEN"
+    umgeschaltet, statt den alten Wert unkommentiert als aktuell auszugeben
+    (siehe formulas.daten_frische).
+    """
     df = df.copy()
     df["collected_at"] = pd.to_datetime(df["collected_at"], format="ISO8601", utc=True)
     letzte = df.sort_values("collected_at").iloc[-1]
@@ -368,7 +376,10 @@ def show_momentan(df: pd.DataFrame) -> None:
     mom_erz = float(letzte["pv_erzeugung_kw"])
     mom_verb = float(letzte["netz_wert_kw"])
     netto = mom_erz - mom_verb
-    stand = letzte["collected_at"].tz_convert("Europe/Berlin").strftime("%H:%M")
+    letzter_ts = letzte["collected_at"]
+    stand = letzter_ts.tz_convert("Europe/Berlin").strftime("%H:%M")
+
+    frische = formulas.daten_frische(letzter_ts)
 
     if netto >= 0:
         netto_label, netto_farbe, netto_wert = (
@@ -384,11 +395,27 @@ def show_momentan(df: pd.DataFrame) -> None:
         )
 
     logger.debug(
-        "Momentan: Erzeugung=%.2f kW | Verbrauch=%.2f kW | Netto=%.2f kW",
+        "Momentan: Erzeugung=%.2f kW | Verbrauch=%.2f kW | Netto=%.2f kW | frisch=%s (%s)",
         mom_erz,
         mom_verb,
         netto,
+        frische["ist_frisch"],
+        frische["alter_text"],
     )
+
+    if frische["ist_frisch"]:
+        status_dot = '<span class="pv-live-dot"></span>'
+        status_text = "LIVE"
+        status_farbe = config.THI_HELLBLAU
+        stand_zeile = f"Stand {stand} Uhr"
+        werte_farbe_erz, werte_farbe_verb = config.FARBE_UEBERSCHUSS, config.FARBE_DEFIZIT
+    else:
+        status_dot = '<span class="pv-stale-dot"></span>'
+        status_text = "KEINE AKTUELLEN DATEN"
+        status_farbe = config.TEXT_SCHWACH
+        stand_zeile = f"Letzter Wert {stand} Uhr ({frische['alter_text']})"
+        werte_farbe_erz = werte_farbe_verb = config.TEXT_SCHWACH
+        netto_farbe = config.TEXT_SCHWACH
 
     st.markdown(_PULSE_CSS, unsafe_allow_html=True)
     st.markdown(
@@ -396,16 +423,14 @@ def show_momentan(df: pd.DataFrame) -> None:
         f"border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:18px 26px;"
         f'display:flex;align-items:center;gap:24px;flex-wrap:wrap;">'
         f'<div style="flex-shrink:0;">'
-        f'<div style="font-size:12px;color:{config.THI_HELLBLAU};font-weight:600;letter-spacing:0.5px;">'
-        f'<span class="pv-live-dot"></span>LIVE</div>'
-        f'<div style="font-size:11px;color:{config.TEXT_SCHWACH};margin-top:4px;">Stand {stand} Uhr</div>'
+        f'<div style="font-size:12px;color:{status_farbe};font-weight:600;letter-spacing:0.5px;">'
+        f"{status_dot}{status_text}</div>"
+        f'<div style="font-size:11px;color:{config.TEXT_SCHWACH};margin-top:4px;">{stand_zeile}</div>'
         f"</div>"
         f'<div style="width:1px;height:46px;background:rgba(255,255,255,0.1);"></div>'
+        + _momentan_block("⚡", "Momentanerzeugung", f"{mom_erz:.2f} kW", werte_farbe_erz)
         + _momentan_block(
-            "⚡", "Momentanerzeugung", f"{mom_erz:.2f} kW", config.FARBE_UEBERSCHUSS
-        )
-        + _momentan_block(
-            "🏠", "Momentanverbrauch", f"{mom_verb:.2f} kW", config.FARBE_DEFIZIT
+            "🏠", "Momentanverbrauch", f"{mom_verb:.2f} kW", werte_farbe_verb
         )
         + _momentan_block("🔁", netto_label, netto_wert, netto_farbe)
         + "</div>",

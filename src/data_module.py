@@ -13,6 +13,13 @@ from dotenv import load_dotenv
 
 import config
 from components.storage import DataStorage
+from logging_setup import setup_logging
+
+# setup_logging nur einmal aufrufen (eigener Prozess, getrennt vom Dashboard) –
+# ohne diesen Aufruf landen INFO/WARNING/ERROR-Meldungen des Collectors nirgends,
+# weder in der Konsole (nur WARNING+ ohne Format) noch in projekt.log.
+if not logging.getLogger().handlers:
+    setup_logging(config.LOG_FILE)
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +120,7 @@ def automatische_abfrage() -> None:
                 letzte_wartung = time.monotonic()
 
         except Exception as fehler:
-            logger.error("Fehler beim Abruf (Server evtl. abgestürzt): %s", fehler)
+            logger.exception("Fehler beim Abruf (Server evtl. abgestürzt): %s", fehler)
             aktuelle_wartezeit = min(aktuelle_wartezeit * 2, config.MAX_WAIT_TIME)
 
         time.sleep(aktuelle_wartezeit)
