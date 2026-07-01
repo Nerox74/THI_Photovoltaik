@@ -2,7 +2,7 @@
 repos:
   # 1. Standard Git-Säuberungen
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0  # Nutze die aktuellste Version
+    rev: v6.0.0  # Nutze die aktuellste Version
     hooks:
       - id: trailing-whitespace      # Entfernt unnötige Leerzeichen am Zeilenende
       - id: end-of-file-fixer        # Stellt sicher, dass Dateien mit einer leeren Zeile enden
@@ -11,14 +11,14 @@ repos:
 
   # 2. Ruff (Ersetzt Flake8/isort: Sortiert Imports und findet Code-Fehler)
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.4
+    rev: v0.15.19
     hooks:
       - id: ruff
         args: [ --fix ]              # Behebt gefundene Fehler (wie ungenutzte Imports) automatisch
 
   # 3. Black (Der Code-Formatter für einheitlichen Python-Stil)
   - repo: https://github.com/psf/black
-    rev: 24.4.2
+    rev: 26.5.1
     hooks:
       - id: black
         language_version: python3    # Erzwingt Python 3

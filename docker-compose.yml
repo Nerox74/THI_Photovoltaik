@@ -1,0 +1,26 @@
+services:
+  collector:
+    build:
+      context: .
+      target: collector
+    env_file: .env
+    environment:
+      - DATA_DIR=/app/data
+    volumes:
+      - pv-data:/app/data
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      target: dashboard
+    environment:
+      - DATA_DIR=/app/data
+    ports:
+      - "8502:8501"
+    volumes:
+      - pv-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  pv-data:

@@ -1,49 +1,39 @@
 name: Python CI
 
-# Definiert, wann die Pipeline laufen soll
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: ["**"]
   pull_request:
-    branches: [ "main" ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    # Hier kannst du verschiedene Python-Versionen gleichzeitig testen lassen
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
 
     steps:
-    # 1. Code aus dem Repository auschecken
     - name: Code auschecken
       uses: actions/checkout@v4
 
-    # 2. Python Umgebung einrichten
     - name: Python ${{ matrix.python-version }} einrichten
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip' # Aktiviert Caching für schnellere Builds
+        cache: 'pip'
 
-    # 3. Abhängigkeiten installieren
     - name: Abhängigkeiten installieren
       run: |
         python -m pip install --upgrade pip
-        pip install pytest
+        pip install pytest ruff black
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    # 4. Code-Stil überprüfen (Linting)
     - name: Linting mit ruff
-      run: |
-        ruff check .
-    - name: Format-Check mit black
-      run: |
-        black --check .
+      run: ruff check .
 
-    # 5. Tests ausführen
+    - name: Format-Check mit black
+      run: black --check .
+
     - name: Tests mit pytest ausführen
-      run: |
-        pytest
+      run: pytest
