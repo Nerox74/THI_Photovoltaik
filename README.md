@@ -83,7 +83,9 @@ docker compose up --build
 
 Beim ersten Start wird das Image gebaut (ca. 1–2 Minuten). Danach läuft:
 - der **Collector** (sammelt alle 5 Sekunden neue Daten)
-- das **Dashboard** unter [http://localhost:8501](http://localhost:8501)
+- das **Dashboard** unter [http://localhost:8502](http://localhost:8502)
+
+> **Hinweis zu den Ports:** Im Docker-Betrieb läuft das Dashboard auf **8502** (Container und Host identisch, `docker-compose.yml`: `8502:8502`), bei lokalem Start (`streamlit run`) auf dem Streamlit-Standardport **8501**. So können beide bei Bedarf parallel laufen.
 
 ### 4. Im Hintergrund laufen lassen (optional)
 
@@ -175,18 +177,41 @@ Alle technischen Parameter (keine Secrets) sind in `src/config.py` gebündelt:
 | `HEADER_REFRESH_S` | Automatischer Dashboard-Refresh | 60 s |
 | `STROMPREIS` | Preis pro kWh für Ersparnis-KPI | 0,39 € |
 | `ANSCHAFFUNGSKOSTEN_PV_ANLAGE` | Basis für Amortisierungsberechnung | 15.000 € |
-| `MAX_TAGESERZEUGUNG_KWH` | Referenzwert für Auslastungs-KPI | 50 kWh |
+| `MAX_TAGESERZEUGUNG_KWH` | Referenzwert für Auslastungs-KPI | 400 kWh |
 | `RETENTION_TAGE` | Wie lange Rohwerte in der DB bleiben | 90 Tage |
 
 ---
 
 ## Aufgabenverteilung
 
-```bash
-Henning: Makefile, Docker, Ordnerstruktur
-Michi: KPIs, Ordnerstruktur
-Nils: Logging, SQL, Ordnerstruktur
-```
+Vieles ist gemeinsam im Austausch über Discord entstanden — Design-Entscheidungen, Bugfixes und Reviews haben wir meist zu dritt besprochen. Müsste man eine klare Unterteilung treffen, wäre folgende Aufteilung am fairsten:
 
+### Nils — Daten-Pipeline, Container & CI/CD
 
+- `data_module.py` — Collector: Server-Abruf, Data Cleaning, Backoff-Logik
+- `components/storage.py` — SQLite-Anbindung, Schema (`messungen` / `tagesbilanz`), Retention & Rollup
+- `logging_setup.py` — zentrales Logging (Konsole + rotierende Datei)
+- `Dockerfile` + `docker-compose.yml` — Multi-Stage-Build & Orchestrierung
+- CI/CD: `.github/workflows/ci.yaml`, `.pre-commit-config.yaml`
+
+### Henning — Tests, Build & Visualisierung
+
+- Test-Suite (Unit + Integration): `test_storage.py`, `test_data_module.py`, `test_integration.py`, `test_charts.py`, `test_main.py`
+- `makefile` — lokale Starts & Docker-Compose-Targets
+- Abhängigkeits-/Konfigverwaltung: `pyproject.toml`, `requirements.txt`, `.gitignore`, `config.py`
+- `components/charts.py` — Tagesverlauf, Tortendiagramme, 3-Monats-Kalender (gemeinsam mit Michi)
+
+### Michi — Frontend & Berechnung
+
+- `components/header.py` — Header mit Wetter, Datum, Standort
+- `components/kpis.py` — KPI-Kacheln, Momentanwerte, Energiebilanz, Amortisierung
+- `main.py` — Zusammenbau des Streamlit-Dashboards
+- `components/formulas.py` — kW→kWh-Umrechnung (Trapezregel), Zeitraum-Aggregation
+- `components/charts.py` — Tagesverlauf, Tortendiagramme, 3-Monats-Kalender (gemeinsam mit Henning)
+- Tests: `test_kpis.py`, `test_header.py`, `test_formulas.py`
+
+### Gemeinsam (alle drei)
+
+- Git-Workflow: Feature-Branches, Pull Requests, Code-Reviews, kein Direkt-Push auf `main`
+- Laufende Abstimmung über Discord
 
