@@ -26,7 +26,7 @@ def umrechnung_in_kwh(df: pd.DataFrame) -> pd.DataFrame:
         kwh_pv_eigen    → direkt aus PV gedeckter Verbrauch (kWh) = ∫ min(Erz., Verbr.)
     """
     df = df.copy()
-    df["collected_at"] = pd.to_datetime(df["collected_at"], utc=True)
+    df["collected_at"] = pd.to_datetime(df["collected_at"], format="ISO8601", utc=True)
     df = df.sort_values("collected_at").reset_index(drop=True)
 
     df["delta_h"] = df["collected_at"].diff().dt.total_seconds().shift(-1) / 3600
@@ -104,6 +104,48 @@ def summen_zeitraum(df_kwh: pd.DataFrame, zeitraum: str) -> dict:
         "eigen": eigen,
         "netz": max(verbraucht - eigen, 0.0),
         "quote": quote,
+    }
+
+
+def _alter_text(alter_sekunden: float) -> str:
+    """Formatiert eine Sekundenzahl als lesbaren 'vor X' Text (Sek/Min/Std)."""
+    alter_sekunden = max(alter_sekunden, 0.0)
+    if alter_sekunden < 60:
+        return f"vor {alter_sekunden:.0f} Sek."
+    minuten = alter_sekunden / 60
+    if minuten < 60:
+        return f"vor {minuten:.0f} Min."
+    stunden = minuten / 60
+    return f"vor {stunden:.1f} Std."
+
+
+def daten_frische(
+    letzter_zeitstempel: pd.Timestamp, jetzt: pd.Timestamp | None = None
+) -> dict:
+    """Prüft, wie alt der letzte Messwert ist und ob er noch als 'live' gilt.
+
+    Schwelle: config.DATENFRISCHE_SEKUNDEN (Default 60s). Darüber gilt die
+    Anzeige als veraltet – Live-Strip, KPIs und Charts sollen dann statt des
+    letzten Werts einen "keine aktuellen Daten"-Hinweis zeigen, statt ihn
+    stillschweigend als aktuell auszugeben.
+
+    Args:
+        letzter_zeitstempel: Zeitstempel des letzten Messwerts (tz-aware).
+        jetzt: Referenzzeitpunkt (Default: aktuelle Zeit). Für Tests überschreibbar.
+
+    Returns dict:
+        ist_frisch      → True, wenn Alter <= DATENFRISCHE_SEKUNDEN
+        alter_sekunden  → Alter des letzten Messwerts in Sekunden
+        alter_text      → Lesbarer Text ("vor 12 Sek.", "vor 3 Min.", ...)
+    """
+    if jetzt is None:
+        jetzt = pd.Timestamp.now(tz="UTC")
+    alter_sekunden = (jetzt - letzter_zeitstempel).total_seconds()
+    ist_frisch = alter_sekunden <= config.DATENFRISCHE_SEKUNDEN
+    return {
+        "ist_frisch": ist_frisch,
+        "alter_sekunden": alter_sekunden,
+        "alter_text": _alter_text(alter_sekunden),
     }
 
 

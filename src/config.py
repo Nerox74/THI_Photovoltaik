@@ -44,7 +44,7 @@ RETENTION_TAGE = 90  # So lange bleiben Rohwerte in der DB; danach nur Tagesbila
 MAX_LUECKE_H = 1 / 60  # Intervalle > 1,5 h gelten als Datenlücke (Collector war aus)
 STROMPREIS = 0.39
 ANSCHAFFUNGSKOSTEN_PV_ANLAGE = 15_000.0
-MAX_TAGESERZEUGUNG_KWH = 50.0
+MAX_TAGESERZEUGUNG_KWH = 400.0  # Referenz für Auslastung; bester gemessener Tag ~388 kWh
 CO2_FAKTOR_KG_PRO_KWH = 0.38  # Deutscher Strommix 2024 (ca. 380 g CO₂/kWh)
 
 # ─────────────────────────────────────────────────────────────────────────────

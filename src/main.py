@@ -4,12 +4,13 @@ Streamlit die Weboberfläche zusammen."""
 import logging
 
 import matplotlib.pyplot as plt
+import pandas as pd
 import streamlit as st
 
 import components.formulas as formulas
 import config
 from components.charts import create_chart_tagesverlauf, draw_calendar_3monate
-from components.formulas import differenz_erzeugt_verbraucht
+from components.formulas import daten_frische, differenz_erzeugt_verbraucht
 from components.header import show_header
 from components.kpis import show_energiebilanz, show_kpis, show_momentan
 from components.storage import DataStorage
@@ -36,6 +37,18 @@ def show_dashboard_content() -> None:
         st.stop()
 
     logger.info("Datenbank geladen: %d Rohzeilen", len(df))
+
+    letzter_ts = pd.to_datetime(df["collected_at"], format="ISO8601", utc=True).max()
+    frische = daten_frische(letzter_ts)
+    if not frische["ist_frisch"]:
+        logger.warning(
+            "Letzter Messwert ist veraltet (%s) – läuft der Collector noch?",
+            frische["alter_text"],
+        )
+        st.warning(
+            f"⚠️ Keine aktuellen Daten – der letzte Messwert ist {frische['alter_text']}. "
+            "Läuft das Sammel-Skript (Collector) noch?"
+        )
 
     data = differenz_erzeugt_verbraucht(df)  # Tagesbilanz-Serie für den Kalender
 
