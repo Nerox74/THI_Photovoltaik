@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 import config
 from components.storage import DataStorage
+from logging_setup import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -120,4 +121,8 @@ def automatische_abfrage() -> None:
 
 
 if __name__ == "__main__":
+    # Logging nur einmal einrichten – so erscheinen INFO-Meldungen des Collectors
+    # (Abrufe, "keine neuen Daten", Rollup) auch im Konsolen-/Docker-Log.
+    if not logging.getLogger().handlers:
+        setup_logging(config.LOG_FILE)
     automatische_abfrage()
