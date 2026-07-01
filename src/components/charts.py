@@ -54,7 +54,12 @@ def _leere_figur(text: str):
 
 
 def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = None):
-    """Zeitverlauf von Erzeugung und Verbrauch (Leistung in kW) für den heutigen Tag."""
+    """Zeitverlauf von Erzeugung und Verbrauch (Leistung in kW) für den heutigen Tag.
+
+    Lücken (> config.MAX_LUECKE_H, aktuell 60s) werden doppelt markiert:
+    die Linie wird an der Lücke unterbrochen (kein interpolierter Strich über
+    den Ausfall hinweg) UND die Fläche wird grau hinterlegt + beschriftet.
+    """
     df = df.copy()
     df["collected_at"] = pd.to_datetime(df["collected_at"], utc=True)
     df["lokal"] = df["collected_at"].dt.tz_convert("Europe/Berlin")
@@ -66,14 +71,12 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
         logger.warning("Tagesverlauf: keine Daten für heute")
         return _leere_figur("Noch keine Messdaten für heute")
 
-    x = df_heute["lokal"].dt.tz_localize(None)  # naive Lokalzeit für die x-Achse
+    x = list(df_heute["lokal"].dt.tz_localize(None))  # naive Lokalzeit für die x-Achse
+    y_erz = list(df_heute["pv_erzeugung_kw"])
+    y_verb = list(df_heute["netz_wert_kw"])
 
-    fig, ax = plt.subplots(figsize=(7, 3.4), facecolor=config.CHART_BG)
-    ax.set_facecolor(config.PANEL_BG)
-    ax.yaxis.grid(True, color="#2a3045", linewidth=0.5, linestyle="--", zorder=0)
-    ax.set_axisbelow(True)
-
-    # ── Datenlücken als graue Fläche einzeichnen ────────────────────────────────
+    # Lücken-Fenster (Start/Ende, lokal & naiv) aus formulas.umrechnung_in_kwh übernehmen
+    luecken_fenster = []
     if luecken is not None and not luecken.empty:
         for _, luecke in luecken.iterrows():
             start_x = (
@@ -84,41 +87,29 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
             ende_x = (
                 pd.Timestamp(luecke["ende"]).tz_convert("Europe/Berlin").tz_localize(None)
             )
-            ax.axvspan(
-                start_x,
-                ende_x,
-                alpha=0.18,
-                color="#888888",
-                zorder=2,
-                label="_nolegend_",
-            )
-            # Beschriftung nur wenn Lücke > 5 Minuten (sonst zu eng)
-            dauer_min = (ende_x - start_x).seconds / 60
-            if dauer_min > 5:
-                ax.text(
-                    start_x + (ende_x - start_x) / 2,
-                    ax.get_ylim()[1] * 0.92,
-                    f"⚠ {dauer_min:.0f} Min.\nkeine Daten",
-                    ha="center",
-                    va="top",
-                    color=config.TEXT_GEDIMMT,
-                    fontsize=5.5,
-                    linespacing=1.4,
-                )
+            luecken_fenster.append((start_x, ende_x))
 
-    ax.fill_between(
-        x,
-        df_heute["pv_erzeugung_kw"],
-        alpha=0.20,
-        color=config.FARBE_UEBERSCHUSS,
-        zorder=1,
-    )
-    ax.fill_between(
-        x, df_heute["netz_wert_kw"], alpha=0.15, color=config.FARBE_DEFIZIT, zorder=1
-    )
+    # Linie an jeder Lücke unterbrechen: direkt nach dem letzten echten Punkt vor der
+    # Lücke einen NaN-Punkt einfügen -> matplotlib zeichnet dort keine Linie, die Kurve
+    # setzt erst beim nächsten echten Messwert (nach der Lücke) wieder an.
+    for start_x, _ in reversed(luecken_fenster):
+        for i, xi in enumerate(x):
+            if xi == start_x:
+                x.insert(i + 1, start_x)
+                y_erz.insert(i + 1, float("nan"))
+                y_verb.insert(i + 1, float("nan"))
+                break
+
+    fig, ax = plt.subplots(figsize=(7, 3.4), facecolor=config.CHART_BG)
+    ax.set_facecolor(config.PANEL_BG)
+    ax.yaxis.grid(True, color="#2a3045", linewidth=0.5, linestyle="--", zorder=0)
+    ax.set_axisbelow(True)
+
+    ax.fill_between(x, y_erz, alpha=0.20, color=config.FARBE_UEBERSCHUSS, zorder=1)
+    ax.fill_between(x, y_verb, alpha=0.15, color=config.FARBE_DEFIZIT, zorder=1)
     ax.plot(
         x,
-        df_heute["pv_erzeugung_kw"],
+        y_erz,
         color=config.FARBE_UEBERSCHUSS,
         linewidth=2.0,
         marker="o",
@@ -128,7 +119,7 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
     )
     ax.plot(
         x,
-        df_heute["netz_wert_kw"],
+        y_verb,
         color=config.FARBE_DEFIZIT,
         linewidth=2.0,
         marker="o",
@@ -150,16 +141,40 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
         pad=10,
     )
 
+    # ── Lücken grau hinterlegen + beschriften (NACH set_ylim!) ──────────────────
+    # transform=ax.get_xaxis_transform() -> x in Datenkoordinaten, y in Achsen-Bruchteilen
+    # (0-1). Das Label landet damit immer bei "92% der sichtbaren Höhe", unabhängig vom
+    # kW-Wertebereich (der alte Bug: ax.get_ylim() wurde VOR dem Plotten abgefragt und
+    # lieferte noch die leere Default-Achse (0,1) statt des späteren echten Bereichs).
+    blend = ax.get_xaxis_transform()
+    for start_x, ende_x in luecken_fenster:
+        ax.axvspan(
+            start_x, ende_x, alpha=0.18, color="#888888", zorder=2, label="_nolegend_"
+        )
+        dauer_min = (ende_x - start_x).seconds / 60
+        if dauer_min > 5:
+            ax.text(
+                start_x + (ende_x - start_x) / 2,
+                0.92,
+                f"⚠ {dauer_min:.0f} Min.\nkeine Daten",
+                ha="center",
+                va="top",
+                color=config.TEXT_GEDIMMT,
+                fontsize=5.5,
+                linespacing=1.4,
+                transform=blend,
+            )
+
     for spine in ax.spines.values():
         spine.set_visible(False)
     legende_handles = [
         mpatches.Patch(color=config.FARBE_UEBERSCHUSS, alpha=0.8, label="Erzeugung (kW)"),
         mpatches.Patch(color=config.FARBE_DEFIZIT, alpha=0.8, label="Verbrauch (kW)"),
     ]
-    if luecken is not None and not luecken.empty:
+    if luecken_fenster:
         legende_handles.append(
             mpatches.Patch(
-                color="#888888", alpha=0.4, label=f"{len(luecken)} Datenlücke(n)"
+                color="#888888", alpha=0.4, label=f"{len(luecken_fenster)} Datenlücke(n)"
             )
         )
     ax.legend(
