@@ -53,7 +53,26 @@ def _leere_figur(text: str):
     return fig
 
 
-def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = None):
+def _mit_luecken_brechen(x, y, max_luecke_h):
+    """Bricht die Linie an Datenlücken: fügt einen NaN-Punkt ein, wo der Abstand
+    zweier Messpunkte größer als max_luecke_h (Stunden) ist. matplotlib zeichnet
+    über NaN keine Linie -> keine falsche Interpolation über messfreie Zeiträume.
+    """
+    x = list(x)
+    y = list(y)
+    aus_x, aus_y = [], []
+    for i in range(len(x)):
+        aus_x.append(x[i])
+        aus_y.append(y[i])
+        if i < len(x) - 1:
+            luecke_h = (x[i + 1] - x[i]).total_seconds() / 3600
+            if luecke_h > max_luecke_h:
+                aus_x.append(x[i] + (x[i + 1] - x[i]) / 2)
+                aus_y.append(float("nan"))  # Trennpunkt -> Linie bricht hier
+    return aus_x, aus_y
+
+
+def create_chart_tagesverlauf(df: pd.DataFrame):
     """Zeitverlauf von Erzeugung und Verbrauch (Leistung in kW) für den heutigen Tag."""
     df = df.copy()
     df["collected_at"] = pd.to_datetime(df["collected_at"], format="ISO8601", utc=True)
@@ -68,57 +87,20 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
 
     x = df_heute["lokal"].dt.tz_localize(None)  # naive Lokalzeit für die x-Achse
 
+    # Linien an Datenlücken (> MAX_LUECKE_H) unterbrechen, statt zu interpolieren
+    x_b, y_erz = _mit_luecken_brechen(x, df_heute["pv_erzeugung_kw"], config.MAX_LUECKE_H)
+    _, y_verb = _mit_luecken_brechen(x, df_heute["netz_wert_kw"], config.MAX_LUECKE_H)
+
     fig, ax = plt.subplots(figsize=(7, 3.4), facecolor=config.CHART_BG)
     ax.set_facecolor(config.PANEL_BG)
     ax.yaxis.grid(True, color="#2a3045", linewidth=0.5, linestyle="--", zorder=0)
     ax.set_axisbelow(True)
 
-    # ── Datenlücken als graue Fläche einzeichnen ────────────────────────────────
-    if luecken is not None and not luecken.empty:
-        for _, luecke in luecken.iterrows():
-            start_x = (
-                pd.Timestamp(luecke["collected_at"])
-                .tz_convert("Europe/Berlin")
-                .tz_localize(None)
-            )
-            ende_x = (
-                pd.Timestamp(luecke["ende"]).tz_convert("Europe/Berlin").tz_localize(None)
-            )
-            ax.axvspan(
-                start_x,
-                ende_x,
-                alpha=0.18,
-                color="#888888",
-                zorder=2,
-                label="_nolegend_",
-            )
-            # Beschriftung nur wenn Lücke > 5 Minuten (sonst zu eng)
-            dauer_min = (ende_x - start_x).seconds / 60
-            if dauer_min > 5:
-                ax.text(
-                    start_x + (ende_x - start_x) / 2,
-                    ax.get_ylim()[1] * 0.92,
-                    f"⚠ {dauer_min:.0f} Min.\nkeine Daten",
-                    ha="center",
-                    va="top",
-                    color=config.TEXT_GEDIMMT,
-                    fontsize=5.5,
-                    linespacing=1.4,
-                )
-
-    ax.fill_between(
-        x,
-        df_heute["pv_erzeugung_kw"],
-        alpha=0.20,
-        color=config.FARBE_UEBERSCHUSS,
-        zorder=1,
-    )
-    ax.fill_between(
-        x, df_heute["netz_wert_kw"], alpha=0.15, color=config.FARBE_DEFIZIT, zorder=1
-    )
+    ax.fill_between(x_b, y_erz, alpha=0.20, color=config.FARBE_UEBERSCHUSS, zorder=1)
+    ax.fill_between(x_b, y_verb, alpha=0.15, color=config.FARBE_DEFIZIT, zorder=1)
     ax.plot(
-        x,
-        df_heute["pv_erzeugung_kw"],
+        x_b,
+        y_erz,
         color=config.FARBE_UEBERSCHUSS,
         linewidth=2.0,
         marker="o",
@@ -127,8 +109,8 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
         zorder=3,
     )
     ax.plot(
-        x,
-        df_heute["netz_wert_kw"],
+        x_b,
+        y_verb,
         color=config.FARBE_DEFIZIT,
         linewidth=2.0,
         marker="o",
@@ -152,18 +134,7 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
 
     for spine in ax.spines.values():
         spine.set_visible(False)
-    legende_handles = [
-        mpatches.Patch(color=config.FARBE_UEBERSCHUSS, alpha=0.8, label="Erzeugung (kW)"),
-        mpatches.Patch(color=config.FARBE_DEFIZIT, alpha=0.8, label="Verbrauch (kW)"),
-    ]
-    if luecken is not None and not luecken.empty:
-        legende_handles.append(
-            mpatches.Patch(
-                color="#888888", alpha=0.4, label=f"{len(luecken)} Datenlücke(n)"
-            )
-        )
     ax.legend(
-        handles=legende_handles,
         facecolor=config.PANEL_BG,
         edgecolor="none",
         labelcolor="white",
@@ -174,6 +145,7 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
 
     plt.tight_layout(pad=1.2)
     return fig
+
 
 def create_pie_pv_quote(summen: dict, titel: str):
     """Tortendiagramm (Donut): Anteil des Verbrauchs aus PV (eigen) vs. Netzbezug.
@@ -196,9 +168,14 @@ def create_pie_pv_quote(summen: dict, titel: str):
         wedgeprops={"width": 0.42, "edgecolor": config.CHART_BG, "linewidth": 1.5},
     )
     ax.text(
-        0, 0, f"{quote:.0f}%",
-        ha="center", va="center",
-        color="white", fontsize=15, fontweight="bold",
+        0,
+        0,
+        f"{quote:.0f}%",
+        ha="center",
+        va="center",
+        color="white",
+        fontsize=15,
+        fontweight="bold",
     )
     ax.set_title(titel, color="white", fontsize=9, fontweight="bold", pad=8)
     ax.legend(
@@ -213,6 +190,7 @@ def create_pie_pv_quote(summen: dict, titel: str):
         framealpha=0.0,
     )
     return fig
+
 
 def draw_calendar_3monate(data: pd.Series, unit: str):
     """Zeichnet die letzten 3 Monate nebeneinander als eine breite Kalender-Grafik."""
