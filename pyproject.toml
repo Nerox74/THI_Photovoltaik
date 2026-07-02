@@ -3,13 +3,38 @@ name = "thi-photovoltaik"
 version = "0.1.0"
 description = "Streamlit-Dashboard zur Visualisierung von PV-Anlagen-Daten"
 requires-python = ">=3.11"
+dependencies = [
+    "streamlit>=1.40",
+    "pandas>=2.0",
+    "matplotlib>=3.7",
+    "numpy>=1.24",
+    "requests>=2.31",
+    "python-dotenv>=1.0",
+    "urllib3>=2.0",
+    "openmeteo-requests>=1.0",
+    "requests-cache>=1.1",
+    "retry-requests>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.1",
+    "black>=24.0",
+    "pre-commit>=3.0",
+]
 
 [tool.ruff]
 line-length = 90
 exclude = [".venv", "venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]   # Errors, Fehler, Warnungen, Import-Sortierung
+ignore = ["E501"]               # Zeilenlänge wird von Black gehandhabt
 
 [tool.black]
 line-length = 90
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
