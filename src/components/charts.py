@@ -53,25 +53,6 @@ def _leere_figur(text: str):
     return fig
 
 
-def _mit_luecken_brechen(x, y, max_luecke_h):
-    """Bricht die Linie an Datenlücken: fügt einen NaN-Punkt ein, wo der Abstand
-    zweier Messpunkte größer als max_luecke_h (Stunden) ist. matplotlib zeichnet
-    über NaN keine Linie -> keine falsche Interpolation über messfreie Zeiträume.
-    """
-    x = list(x)
-    y = list(y)
-    aus_x, aus_y = [], []
-    for i in range(len(x)):
-        aus_x.append(x[i])
-        aus_y.append(y[i])
-        if i < len(x) - 1:
-            luecke_h = (x[i + 1] - x[i]).total_seconds() / 3600
-            if luecke_h > max_luecke_h:
-                aus_x.append(x[i] + (x[i + 1] - x[i]) / 2)
-                aus_y.append(float("nan"))  # Trennpunkt -> Linie bricht hier
-    return aus_x, aus_y
-
-
 def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = None):
     """Zeitverlauf von Erzeugung und Verbrauch (Leistung in kW) für den heutigen Tag.
 
@@ -80,7 +61,7 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
     den Ausfall hinweg) UND die Fläche wird grau hinterlegt + beschriftet.
     """
     df = df.copy()
-    df["collected_at"] = pd.to_datetime(df["collected_at"], format="ISO8601", utc=True)
+    df["collected_at"] = pd.to_datetime(df["collected_at"], utc=True)
     df["lokal"] = df["collected_at"].dt.tz_convert("Europe/Berlin")
 
     heute = pd.Timestamp.now(tz="Europe/Berlin").normalize()
@@ -119,22 +100,15 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
                 y_verb.insert(i + 1, float("nan"))
                 break
 
-    # Linien an Datenlücken (> MAX_LUECKE_H) unterbrechen, statt zu interpolieren.
-    # Wichtig: die oben bereits um NaN-Punkte erweiterten Listen y_erz/y_verb
-    # weitergeben (nicht die kürzeren df-Originalspalten) – sonst passt die Länge
-    # nicht mehr zum erweiterten x und _mit_luecken_brechen läuft in einen IndexError.
-    x_b, y_erz = _mit_luecken_brechen(x, y_erz, config.MAX_LUECKE_H)
-    _, y_verb = _mit_luecken_brechen(x, y_verb, config.MAX_LUECKE_H)
-
     fig, ax = plt.subplots(figsize=(7, 3.4), facecolor=config.CHART_BG)
     ax.set_facecolor(config.PANEL_BG)
     ax.yaxis.grid(True, color="#2a3045", linewidth=0.5, linestyle="--", zorder=0)
     ax.set_axisbelow(True)
 
-    ax.fill_between(x_b, y_erz, alpha=0.20, color=config.FARBE_UEBERSCHUSS, zorder=1)
-    ax.fill_between(x_b, y_verb, alpha=0.15, color=config.FARBE_DEFIZIT, zorder=1)
+    ax.fill_between(x, y_erz, alpha=0.20, color=config.FARBE_UEBERSCHUSS, zorder=1)
+    ax.fill_between(x, y_verb, alpha=0.15, color=config.FARBE_DEFIZIT, zorder=1)
     ax.plot(
-        x_b,
+        x,
         y_erz,
         color=config.FARBE_UEBERSCHUSS,
         linewidth=2.0,
@@ -144,7 +118,7 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
         zorder=3,
     )
     ax.plot(
-        x_b,
+        x,
         y_verb,
         color=config.FARBE_DEFIZIT,
         linewidth=2.0,
@@ -216,44 +190,6 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
     plt.tight_layout(pad=1.2)
     return fig
 
-def create_pie_pv_quote(summen: dict, titel: str):
-    """Tortendiagramm (Donut): Anteil des Verbrauchs aus PV (eigen) vs. Netzbezug.
-
-    Erwartet ein Summen-dict (wie formulas.summen_zeitraum / storage.summen_seit)
-    mit den Schlüsseln 'eigen', 'netz', 'quote'.
-    """
-    eigen = summen["eigen"]
-    netz = summen["netz"]
-    quote = summen["quote"]
-    if eigen + netz <= 0:
-        return _leere_figur(f"{titel}: keine Daten")
-
-    fig, ax = plt.subplots(figsize=(3, 3), facecolor=config.CHART_BG)
-    ax.pie(
-        [eigen, netz],
-        colors=[config.FARBE_UEBERSCHUSS, config.FARBE_DEFIZIT],
-        startangle=90,
-        counterclock=False,
-        wedgeprops={"width": 0.42, "edgecolor": config.CHART_BG, "linewidth": 1.5},
-    )
-    ax.text(
-        0, 0, f"{quote:.0f}%",
-        ha="center", va="center",
-        color="white", fontsize=15, fontweight="bold",
-    )
-    ax.set_title(titel, color="white", fontsize=9, fontweight="bold", pad=8)
-    ax.legend(
-        ["aus PV", "aus Netz"],
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.08),
-        ncol=2,
-        facecolor=config.PANEL_BG,
-        edgecolor="none",
-        labelcolor="white",
-        fontsize=7,
-        framealpha=0.0,
-    )
-    return fig
 
 def create_pie_pv_quote(summen: dict, titel: str):
     """Tortendiagramm (Donut): Anteil des Verbrauchs aus PV (eigen) vs. Netzbezug.

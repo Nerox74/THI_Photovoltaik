@@ -114,7 +114,7 @@ def automatische_abfrage() -> None:
                 letzte_wartung = time.monotonic()
 
         except Exception as fehler:
-            logger.error("Fehler beim Abruf (Server evtl. abgestürzt): %s", fehler)
+            logger.exception("Fehler beim Abruf (Server evtl. abgestürzt): %s", fehler)
             aktuelle_wartezeit = min(aktuelle_wartezeit * 2, config.MAX_WAIT_TIME)
 
         time.sleep(aktuelle_wartezeit)

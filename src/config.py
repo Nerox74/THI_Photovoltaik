@@ -42,6 +42,7 @@ RETENTION_TAGE = 90  # So lange bleiben Rohwerte in der DB; danach nur Tagesbila
 # BERECHNUNG (formulas.py / kpis.py)
 # ─────────────────────────────────────────────────────────────────────────────
 MAX_LUECKE_H = 1 / 60  # Intervalle > 60 s gelten als Datenlücke (Collector war aus)
+DATENFRISCHE_SEKUNDEN = 60  # Ist der letzte Messwert älter, gilt die Anzeige als veraltet
 STROMPREIS = 0.39
 ANSCHAFFUNGSKOSTEN_PV_ANLAGE = 15_000.0
 MAX_TAGESERZEUGUNG_KWH = 400.0  # Referenz für Auslastung; bester gemessener Tag ~388 kWh
