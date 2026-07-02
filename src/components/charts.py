@@ -61,7 +61,7 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
     den Ausfall hinweg) UND die Fläche wird grau hinterlegt + beschriftet.
     """
     df = df.copy()
-    df["collected_at"] = pd.to_datetime(df["collected_at"], utc=True)
+    df["collected_at"] = pd.to_datetime(df["collected_at"], format="ISO8601", utc=True)
     df["lokal"] = df["collected_at"].dt.tz_convert("Europe/Berlin")
 
     heute = pd.Timestamp.now(tz="Europe/Berlin").normalize()
