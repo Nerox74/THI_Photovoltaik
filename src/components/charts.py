@@ -75,7 +75,11 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
     y_erz = list(df_heute["pv_erzeugung_kw"])
     y_verb = list(df_heute["netz_wert_kw"])
 
-    # Lücken-Fenster (Start/Ende, lokal & naiv) aus formulas.umrechnung_in_kwh übernehmen
+    # Lücken-Fenster (Start/Ende, lokal & naiv) aus formulas.umrechnung_in_kwh übernehmen.
+    # WICHTIG: luecken deckt den GESAMTEN Datensatz ab, der Chart zeigt aber nur HEUTE.
+    # Darum nur Lücken übernehmen, die heute beginnen – sonst würden Wochen-Lücken grau
+    # hinterlegt und die x-Achse über die ganze Woche gedehnt (alle Ticks -> 00:00).
+    heute_naiv = heute.tz_localize(None)
     luecken_fenster = []
     if luecken is not None and not luecken.empty:
         for _, luecke in luecken.iterrows():
@@ -87,6 +91,8 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
             ende_x = (
                 pd.Timestamp(luecke["ende"]).tz_convert("Europe/Berlin").tz_localize(None)
             )
+            if start_x < heute_naiv:
+                continue  # Lücke liegt vor heute -> für den Tagesverlauf irrelevant
             luecken_fenster.append((start_x, ende_x))
 
     # Linie an jeder Lücke unterbrechen: direkt nach dem letzten echten Punkt vor der
