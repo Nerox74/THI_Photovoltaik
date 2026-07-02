@@ -72,8 +72,13 @@ def _mit_luecken_brechen(x, y, max_luecke_h):
     return aus_x, aus_y
 
 
-def create_chart_tagesverlauf(df: pd.DataFrame):
-    """Zeitverlauf von Erzeugung und Verbrauch (Leistung in kW) für den heutigen Tag."""
+def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = None):
+    """Zeitverlauf von Erzeugung und Verbrauch (Leistung in kW) für den heutigen Tag.
+
+    Lücken (> config.MAX_LUECKE_H, aktuell 60s) werden doppelt markiert:
+    die Linie wird an der Lücke unterbrochen (kein interpolierter Strich über
+    den Ausfall hinweg) UND die Fläche wird grau hinterlegt + beschriftet.
+    """
     df = df.copy()
     df["collected_at"] = pd.to_datetime(df["collected_at"], format="ISO8601", utc=True)
     df["lokal"] = df["collected_at"].dt.tz_convert("Europe/Berlin")
@@ -85,7 +90,34 @@ def create_chart_tagesverlauf(df: pd.DataFrame):
         logger.warning("Tagesverlauf: keine Daten für heute")
         return _leere_figur("Noch keine Messdaten für heute")
 
-    x = df_heute["lokal"].dt.tz_localize(None)  # naive Lokalzeit für die x-Achse
+    x = list(df_heute["lokal"].dt.tz_localize(None))  # naive Lokalzeit für die x-Achse
+    y_erz = list(df_heute["pv_erzeugung_kw"])
+    y_verb = list(df_heute["netz_wert_kw"])
+
+    # Lücken-Fenster (Start/Ende, lokal & naiv) aus formulas.umrechnung_in_kwh übernehmen
+    luecken_fenster = []
+    if luecken is not None and not luecken.empty:
+        for _, luecke in luecken.iterrows():
+            start_x = (
+                pd.Timestamp(luecke["collected_at"])
+                .tz_convert("Europe/Berlin")
+                .tz_localize(None)
+            )
+            ende_x = (
+                pd.Timestamp(luecke["ende"]).tz_convert("Europe/Berlin").tz_localize(None)
+            )
+            luecken_fenster.append((start_x, ende_x))
+
+    # Linie an jeder Lücke unterbrechen: direkt nach dem letzten echten Punkt vor der
+    # Lücke einen NaN-Punkt einfügen -> matplotlib zeichnet dort keine Linie, die Kurve
+    # setzt erst beim nächsten echten Messwert (nach der Lücke) wieder an.
+    for start_x, _ in reversed(luecken_fenster):
+        for i, xi in enumerate(x):
+            if xi == start_x:
+                x.insert(i + 1, start_x)
+                y_erz.insert(i + 1, float("nan"))
+                y_verb.insert(i + 1, float("nan"))
+                break
 
     # Linien an Datenlücken (> MAX_LUECKE_H) unterbrechen, statt zu interpolieren
     x_b, y_erz = _mit_luecken_brechen(x, df_heute["pv_erzeugung_kw"], config.MAX_LUECKE_H)
@@ -132,9 +164,44 @@ def create_chart_tagesverlauf(df: pd.DataFrame):
         pad=10,
     )
 
+    # ── Lücken grau hinterlegen + beschriften (NACH set_ylim!) ──────────────────
+    # transform=ax.get_xaxis_transform() -> x in Datenkoordinaten, y in Achsen-Bruchteilen
+    # (0-1). Das Label landet damit immer bei "92% der sichtbaren Höhe", unabhängig vom
+    # kW-Wertebereich (der alte Bug: ax.get_ylim() wurde VOR dem Plotten abgefragt und
+    # lieferte noch die leere Default-Achse (0,1) statt des späteren echten Bereichs).
+    blend = ax.get_xaxis_transform()
+    for start_x, ende_x in luecken_fenster:
+        ax.axvspan(
+            start_x, ende_x, alpha=0.18, color="#888888", zorder=2, label="_nolegend_"
+        )
+        dauer_min = (ende_x - start_x).seconds / 60
+        if dauer_min > 5:
+            ax.text(
+                start_x + (ende_x - start_x) / 2,
+                0.92,
+                f"⚠ {dauer_min:.0f} Min.\nkeine Daten",
+                ha="center",
+                va="top",
+                color=config.TEXT_GEDIMMT,
+                fontsize=5.5,
+                linespacing=1.4,
+                transform=blend,
+            )
+
     for spine in ax.spines.values():
         spine.set_visible(False)
+    legende_handles = [
+        mpatches.Patch(color=config.FARBE_UEBERSCHUSS, alpha=0.8, label="Erzeugung (kW)"),
+        mpatches.Patch(color=config.FARBE_DEFIZIT, alpha=0.8, label="Verbrauch (kW)"),
+    ]
+    if luecken_fenster:
+        legende_handles.append(
+            mpatches.Patch(
+                color="#888888", alpha=0.4, label=f"{len(luecken_fenster)} Datenlücke(n)"
+            )
+        )
     ax.legend(
+        handles=legende_handles,
         facecolor=config.PANEL_BG,
         edgecolor="none",
         labelcolor="white",
@@ -146,6 +213,44 @@ def create_chart_tagesverlauf(df: pd.DataFrame):
     plt.tight_layout(pad=1.2)
     return fig
 
+def create_pie_pv_quote(summen: dict, titel: str):
+    """Tortendiagramm (Donut): Anteil des Verbrauchs aus PV (eigen) vs. Netzbezug.
+
+    Erwartet ein Summen-dict (wie formulas.summen_zeitraum / storage.summen_seit)
+    mit den Schlüsseln 'eigen', 'netz', 'quote'.
+    """
+    eigen = summen["eigen"]
+    netz = summen["netz"]
+    quote = summen["quote"]
+    if eigen + netz <= 0:
+        return _leere_figur(f"{titel}: keine Daten")
+
+    fig, ax = plt.subplots(figsize=(3, 3), facecolor=config.CHART_BG)
+    ax.pie(
+        [eigen, netz],
+        colors=[config.FARBE_UEBERSCHUSS, config.FARBE_DEFIZIT],
+        startangle=90,
+        counterclock=False,
+        wedgeprops={"width": 0.42, "edgecolor": config.CHART_BG, "linewidth": 1.5},
+    )
+    ax.text(
+        0, 0, f"{quote:.0f}%",
+        ha="center", va="center",
+        color="white", fontsize=15, fontweight="bold",
+    )
+    ax.set_title(titel, color="white", fontsize=9, fontweight="bold", pad=8)
+    ax.legend(
+        ["aus PV", "aus Netz"],
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.08),
+        ncol=2,
+        facecolor=config.PANEL_BG,
+        edgecolor="none",
+        labelcolor="white",
+        fontsize=7,
+        framealpha=0.0,
+    )
+    return fig
 
 def create_pie_pv_quote(summen: dict, titel: str):
     """Tortendiagramm (Donut): Anteil des Verbrauchs aus PV (eigen) vs. Netzbezug.

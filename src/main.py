@@ -6,6 +6,7 @@ import logging
 import matplotlib.pyplot as plt
 import streamlit as st
 
+import components.formulas as formulas
 import config
 from components.charts import create_chart_tagesverlauf, draw_calendar_3monate
 from components.formulas import differenz_erzeugt_verbraucht
@@ -20,6 +21,7 @@ if not logging.getLogger().handlers:
 
 logger = logging.getLogger(__name__)
 logger.info("Die App wurde gestartet")
+logger.info("Dashboard erreichbar unter: http://localhost:8502")
 
 
 @st.fragment(run_every=60)
@@ -53,7 +55,8 @@ def show_dashboard_content() -> None:
     st.divider()
 
     # ── Zeitverlauf des aktuellen Tages ─────────────────────────────────────
-    fig_verlauf = create_chart_tagesverlauf(df)
+    df_kwh, luecken_heute = formulas.umrechnung_in_kwh(df)
+    fig_verlauf = create_chart_tagesverlauf(df, luecken_heute)
     st.pyplot(fig_verlauf)
     plt.close(fig_verlauf)
 

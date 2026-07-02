@@ -16,11 +16,10 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # CSV_PATH = DATA_DIR / "cleaned_data.csv"
-LOG_FILE = PROJECT_ROOT / "projekt.log"
 
 
 DB_PATH = DATA_DIR / "pv_data.db"
-LOG_FILE = PROJECT_ROOT / "projekt.log"
+LOG_FILE = DATA_DIR / "projekt.log"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ZEIT
@@ -42,7 +41,7 @@ RETENTION_TAGE = 90  # So lange bleiben Rohwerte in der DB; danach nur Tagesbila
 # ─────────────────────────────────────────────────────────────────────────────
 # BERECHNUNG (formulas.py / kpis.py)
 # ─────────────────────────────────────────────────────────────────────────────
-MAX_LUECKE_H = 1.5  # Intervalle > 1,5 h gelten als Datenlücke (Collector war aus)
+MAX_LUECKE_H = 1 / 60  # Intervalle > 1,5 h gelten als Datenlücke (Collector war aus)
 STROMPREIS = 0.39
 ANSCHAFFUNGSKOSTEN_PV_ANLAGE = 15_000.0
 MAX_TAGESERZEUGUNG_KWH = 400.0  # Referenz für Auslastung; bester gemessener Tag ~388 kWh

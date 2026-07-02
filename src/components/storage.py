@@ -240,7 +240,7 @@ class DataStorage:
         if df.empty:
             return 0
 
-        df_kwh = formulas.umrechnung_in_kwh(df)
+        df_kwh, _ = formulas.umrechnung_in_kwh(df)
         df_kwh["datum"] = df_kwh["collected_at"].dt.tz_convert(LOKALE_ZEITZONE).dt.date
         summen = df_kwh.groupby("datum")[
             ["kwh_erzeugt", "kwh_verbraucht", "kwh_pv_eigen"]
