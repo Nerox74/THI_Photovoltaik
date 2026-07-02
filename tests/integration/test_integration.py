@@ -76,7 +76,7 @@ def test_pipeline_datenbank_zu_kwh(temp_db):
         temp_db.insert_row(daten_bereinigen(rohdaten))
 
     df = temp_db.load_raw_df()
-    df_kwh = umrechnung_in_kwh(df)
+    df_kwh, _ = umrechnung_in_kwh(df)
 
     # 1 Stunde Abstand, Trapezregel: (5 + 6) / 2 × 1 h = 5.5 kWh
     assert df_kwh["kwh_erzeugt"].sum() == pytest.approx(5.5, abs=0.05)

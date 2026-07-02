@@ -40,7 +40,7 @@ def test_konstante_leistung_eine_stunde():
         pv_werte=[1.0, 1.0],
         netz_werte=[2.0, 2.0],
     )
-    ergebnis = umrechnung_in_kwh(df)
+    ergebnis, _ = umrechnung_in_kwh(df)
     assert ergebnis["kwh_erzeugt"].sum() == pytest.approx(1.0)
     assert ergebnis["kwh_verbraucht"].sum() == pytest.approx(2.0)
 
@@ -51,7 +51,7 @@ def test_steigende_leistung_trapezregel():
         pv_werte=[0.0, 2.0],
         netz_werte=[0.0, 0.0],
     )
-    ergebnis = umrechnung_in_kwh(df)
+    ergebnis, _ = umrechnung_in_kwh(df)
     assert ergebnis["kwh_erzeugt"].sum() == pytest.approx(1.0)
 
 
@@ -61,7 +61,7 @@ def test_delta_h_wird_richtig_berechnet():
         pv_werte=[1.0, 1.0],
         netz_werte=[1.0, 1.0],
     )
-    ergebnis = umrechnung_in_kwh(df)
+    ergebnis, _ = umrechnung_in_kwh(df)
     assert ergebnis["delta_h"].iloc[0] == pytest.approx(0.5)
 
 
@@ -72,7 +72,7 @@ def test_datenluecke_wird_nicht_mitintegriert():
         pv_werte=[2.0, 2.0],
         netz_werte=[2.0, 2.0],
     )
-    ergebnis = umrechnung_in_kwh(df)
+    ergebnis, _ = umrechnung_in_kwh(df)
     assert ergebnis["kwh_erzeugt"].sum() == pytest.approx(0.0)
 
 
@@ -86,7 +86,7 @@ def test_eigenverbrauch_ist_min_von_erzeugung_und_verbrauch():
         pv_werte=[1.0, 1.0],
         netz_werte=[3.0, 3.0],
     )
-    ergebnis = umrechnung_in_kwh(df)
+    ergebnis, _ = umrechnung_in_kwh(df)
     assert ergebnis["kwh_pv_eigen"].sum() == pytest.approx(1.0)
 
 
@@ -97,7 +97,7 @@ def test_eigenverbrauch_gedeckelt_durch_verbrauch():
         pv_werte=[4.0, 4.0],
         netz_werte=[1.0, 1.0],
     )
-    ergebnis = umrechnung_in_kwh(df)
+    ergebnis, _ = umrechnung_in_kwh(df)
     assert ergebnis["kwh_erzeugt"].sum() == pytest.approx(4.0)
     assert ergebnis["kwh_pv_eigen"].sum() == pytest.approx(1.0)
 
@@ -106,7 +106,7 @@ def test_eigenverbrauch_gedeckelt_durch_verbrauch():
 
 
 def test_summen_zeitraum_tag_rechnet_korrekt():
-    df_kwh = umrechnung_in_kwh(baue_heute_df(pv=2.0, netz=4.0))
+    df_kwh, _ = umrechnung_in_kwh(baue_heute_df(pv=2.0, netz=4.0))
     s = summen_zeitraum(df_kwh, "Tag")
     assert s["erzeugt"] == pytest.approx(2.0)  # (2+2)/2 × 1 h
     assert s["verbraucht"] == pytest.approx(4.0)
@@ -117,7 +117,7 @@ def test_summen_zeitraum_tag_rechnet_korrekt():
 
 def test_summen_zeitraum_monat_und_jahr_enthalten_heute():
     """Bei ausschließlich heutigen Daten sind Tag = Monat = Jahr."""
-    df_kwh = umrechnung_in_kwh(baue_heute_df(pv=2.0, netz=4.0))
+    df_kwh, _ = umrechnung_in_kwh(baue_heute_df(pv=2.0, netz=4.0))
     for zeitraum in ["Monat", "Jahr"]:
         s = summen_zeitraum(df_kwh, zeitraum)
         assert s["erzeugt"] == pytest.approx(2.0)
@@ -125,7 +125,7 @@ def test_summen_zeitraum_monat_und_jahr_enthalten_heute():
 
 
 def test_summen_zeitraum_quote_null_ohne_verbrauch():
-    df_kwh = umrechnung_in_kwh(baue_heute_df(pv=2.0, netz=0.0))
+    df_kwh, _ = umrechnung_in_kwh(baue_heute_df(pv=2.0, netz=0.0))
     s = summen_zeitraum(df_kwh, "Tag")
     assert s["verbraucht"] == pytest.approx(0.0)
     assert s["quote"] == 0.0
@@ -138,7 +138,7 @@ def test_summen_zeitraum_alte_daten_ergeben_null():
         pv_werte=[5.0, 5.0],
         netz_werte=[5.0, 5.0],
     )
-    df_kwh = umrechnung_in_kwh(df)
+    df_kwh, _ = umrechnung_in_kwh(df)
     for zeitraum in ["Tag", "Monat", "Jahr"]:
         s = summen_zeitraum(df_kwh, zeitraum)
         assert s["erzeugt"] == 0.0
@@ -146,7 +146,7 @@ def test_summen_zeitraum_alte_daten_ergeben_null():
 
 
 def test_summen_zeitraum_unbekannter_zeitraum_wirft_fehler():
-    df_kwh = umrechnung_in_kwh(baue_heute_df())
+    df_kwh, _ = umrechnung_in_kwh(baue_heute_df())
     with pytest.raises(ValueError):
         summen_zeitraum(df_kwh, "Quartal")
 

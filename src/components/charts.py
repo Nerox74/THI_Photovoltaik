@@ -119,9 +119,12 @@ def create_chart_tagesverlauf(df: pd.DataFrame, luecken: pd.DataFrame | None = N
                 y_verb.insert(i + 1, float("nan"))
                 break
 
-    # Linien an Datenlücken (> MAX_LUECKE_H) unterbrechen, statt zu interpolieren
-    x_b, y_erz = _mit_luecken_brechen(x, df_heute["pv_erzeugung_kw"], config.MAX_LUECKE_H)
-    _, y_verb = _mit_luecken_brechen(x, df_heute["netz_wert_kw"], config.MAX_LUECKE_H)
+    # Linien an Datenlücken (> MAX_LUECKE_H) unterbrechen, statt zu interpolieren.
+    # Wichtig: die oben bereits um NaN-Punkte erweiterten Listen y_erz/y_verb
+    # weitergeben (nicht die kürzeren df-Originalspalten) – sonst passt die Länge
+    # nicht mehr zum erweiterten x und _mit_luecken_brechen läuft in einen IndexError.
+    x_b, y_erz = _mit_luecken_brechen(x, y_erz, config.MAX_LUECKE_H)
+    _, y_verb = _mit_luecken_brechen(x, y_verb, config.MAX_LUECKE_H)
 
     fig, ax = plt.subplots(figsize=(7, 3.4), facecolor=config.CHART_BG)
     ax.set_facecolor(config.PANEL_BG)
